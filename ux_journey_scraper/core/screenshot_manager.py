@@ -1,31 +1,52 @@
 """
 Screenshot manager with PII blur capabilities.
 """
+import asyncio
 import re
 from pathlib import Path
+
 from PIL import Image, ImageDraw, ImageFilter
-import asyncio
 
 
 class ScreenshotManager:
     """Capture screenshots and blur PII (emails, credit cards, phone numbers, names)."""
 
     # PII detection patterns
-    EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')
-    CREDIT_CARD_PATTERN = re.compile(r'\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b')
-    PHONE_PATTERN = re.compile(r'\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b')
-    SSN_PATTERN = re.compile(r'\b\d{3}-\d{2}-\d{4}\b')
-    
+    EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
+    CREDIT_CARD_PATTERN = re.compile(r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b")
+    PHONE_PATTERN = re.compile(r"\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b")
+    SSN_PATTERN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+
     # Common form field names that may contain PII
     PII_FIELDS = [
-        'email', 'e-mail', 'mail',
-        'password', 'pwd', 'pass',
-        'credit-card', 'creditcard', 'card-number', 'ccnumber',
-        'cvv', 'cvc', 'security-code',
-        'ssn', 'social-security',
-        'phone', 'telephone', 'mobile',
-        'name', 'firstname', 'lastname', 'fullname',
-        'address', 'street', 'city', 'zip', 'zipcode', 'postal',
+        "email",
+        "e-mail",
+        "mail",
+        "password",
+        "pwd",
+        "pass",
+        "credit-card",
+        "creditcard",
+        "card-number",
+        "ccnumber",
+        "cvv",
+        "cvc",
+        "security-code",
+        "ssn",
+        "social-security",
+        "phone",
+        "telephone",
+        "mobile",
+        "name",
+        "firstname",
+        "lastname",
+        "fullname",
+        "address",
+        "street",
+        "city",
+        "zip",
+        "zipcode",
+        "postal",
     ]
 
     def __init__(self, output_dir="screenshots", blur_pii=True):
@@ -53,7 +74,7 @@ class ScreenshotManager:
             str: Path to saved screenshot
         """
         blur = blur if blur is not None else self.blur_pii
-        
+
         # Generate filename
         filename = f"step-{step_number:03d}.png"
         filepath = self.output_dir / filename
@@ -136,33 +157,38 @@ class ScreenshotManager:
                     # Get bounding box
                     bbox = await input_elem.bounding_box()
                     if bbox:
-                        regions.append((
-                            int(bbox['x']),
-                            int(bbox['y']),
-                            int(bbox['width']),
-                            int(bbox['height'])
-                        ))
+                        regions.append(
+                            (
+                                int(bbox["x"]),
+                                int(bbox["y"]),
+                                int(bbox["width"]),
+                                int(bbox["height"]),
+                            )
+                        )
 
             # Find text elements containing PII patterns
-            all_text_elements = await page.query_selector_all('*')
+            all_text_elements = await page.query_selector_all("*")
             for elem in all_text_elements[:100]:  # Limit to first 100 elements for performance
                 try:
                     text = await elem.inner_text()
-                    
+
                     # Check for PII patterns
-                    if (self.EMAIL_PATTERN.search(text) or
-                        self.CREDIT_CARD_PATTERN.search(text) or
-                        self.PHONE_PATTERN.search(text) or
-                        self.SSN_PATTERN.search(text)):
-                        
+                    if (
+                        self.EMAIL_PATTERN.search(text)
+                        or self.CREDIT_CARD_PATTERN.search(text)
+                        or self.PHONE_PATTERN.search(text)
+                        or self.SSN_PATTERN.search(text)
+                    ):
                         bbox = await elem.bounding_box()
                         if bbox:
-                            regions.append((
-                                int(bbox['x']),
-                                int(bbox['y']),
-                                int(bbox['width']),
-                                int(bbox['height'])
-                            ))
+                            regions.append(
+                                (
+                                    int(bbox["x"]),
+                                    int(bbox["y"]),
+                                    int(bbox["width"]),
+                                    int(bbox["height"]),
+                                )
+                            )
                 except:
                     continue
 
@@ -193,36 +219,28 @@ class ScreenshotManager:
 
         # Color mapping by severity
         colors = {
-            'critical': '#FF0000',  # Red
-            'major': '#FFA500',     # Orange
-            'minor': '#0000FF'      # Blue
+            "critical": "#FF0000",  # Red
+            "major": "#FFA500",  # Orange
+            "minor": "#0000FF",  # Blue
         }
 
         # Draw annotations
         for i, annotation in enumerate(annotations, 1):
-            x = annotation.get('x', 0)
-            y = annotation.get('y', 0)
-            width = annotation.get('width', 100)
-            height = annotation.get('height', 50)
-            severity = annotation.get('severity', 'minor')
-            
-            color = colors.get(severity, '#0000FF')
+            x = annotation.get("x", 0)
+            y = annotation.get("y", 0)
+            width = annotation.get("width", 100)
+            height = annotation.get("height", 50)
+            severity = annotation.get("severity", "minor")
+
+            color = colors.get(severity, "#0000FF")
 
             # Draw rectangle
-            draw.rectangle(
-                [(x, y), (x + width, y + height)],
-                outline=color,
-                width=3
-            )
+            draw.rectangle([(x, y), (x + width, y + height)], outline=color, width=3)
 
             # Draw number marker
             marker_size = 25
-            draw.ellipse(
-                [(x, y - marker_size), (x + marker_size, y)],
-                fill=color,
-                outline=color
-            )
-            draw.text((x + 5, y - 20), str(i), fill='white')
+            draw.ellipse([(x, y - marker_size), (x + marker_size, y)], fill=color, outline=color)
+            draw.text((x + 5, y - 20), str(i), fill="white")
 
         # Save annotated screenshot
         img.save(output_path)

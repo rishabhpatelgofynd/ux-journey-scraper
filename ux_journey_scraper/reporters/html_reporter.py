@@ -2,8 +2,8 @@
 HTML reporter for interactive journey analysis reports.
 """
 import base64
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 
 class HTMLReporter:
@@ -25,7 +25,7 @@ class HTMLReporter:
         html = self._build_html(analysis, journey, include_screenshots)
 
         # Save to file
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(html)
 
         print(f"✓ HTML report saved: {output_path}")
@@ -291,7 +291,7 @@ class HTMLReporter:
     def _build_summary(self, analysis):
         """Build summary section."""
         score_class = self._get_score_class(analysis.overall_score)
-        
+
         return f"""
         <div class="summary">
             <h2>📊 Journey Summary</h2>
@@ -319,34 +319,36 @@ class HTMLReporter:
     def _build_steps_section(self, analysis, journey, include_screenshots):
         """Build steps section."""
         steps_html = ""
-        
+
         for step_analysis in analysis.step_analyses:
             # Find corresponding journey step for screenshot
-            journey_step = next((s for s in journey.steps if s.step_number == step_analysis.step_number), None)
-            
+            journey_step = next(
+                (s for s in journey.steps if s.step_number == step_analysis.step_number), None
+            )
+
             steps_html += self._build_step(step_analysis, journey_step, include_screenshots)
-        
+
         return steps_html
 
     def _build_step(self, step_analysis, journey_step, include_screenshot):
         """Build individual step section."""
         score_class = self._get_score_class(step_analysis.overall_score)
-        
+
         # Build screenshot HTML
         screenshot_html = ""
         if include_screenshot and journey_step and journey_step.screenshot_path:
             try:
                 screenshot_path = Path(journey_step.screenshot_path)
                 if screenshot_path.exists():
-                    with open(screenshot_path, 'rb') as f:
-                        img_data = base64.b64encode(f.read()).decode('utf-8')
+                    with open(screenshot_path, "rb") as f:
+                        img_data = base64.b64encode(f.read()).decode("utf-8")
                     screenshot_html = f'<img src="data:image/png;base64,{img_data}" class="screenshot" alt="Step {step_analysis.step_number} screenshot">'
             except Exception as e:
                 screenshot_html = f'<p style="color: #666;">Screenshot unavailable: {e}</p>'
-        
+
         # Build issues HTML
         issues_html = self._build_issues_html(step_analysis)
-        
+
         return f"""
         <div class="step">
             <div class="step-header">
@@ -370,21 +372,21 @@ class HTMLReporter:
     def _build_issues_html(self, step_analysis):
         """Build issues HTML for a step."""
         total_issues = len(step_analysis.ux_violations) + len(step_analysis.accessibility_issues)
-        
+
         if total_issues == 0:
             return '<div class="no-issues">✅ No issues found on this page!</div>'
-        
+
         html = '<div class="issues">'
-        
+
         # UX Violations
         if step_analysis.ux_violations:
             html += '<h4 style="margin-bottom: 10px;">UX Violations</h4>'
             for violation in step_analysis.ux_violations:
-                severity = violation.get('severity', 'minor')
-                guideline_id = violation.get('guideline_id', '')
-                issue = violation.get('issue', '')
-                fix = violation.get('fix', '')
-                
+                severity = violation.get("severity", "minor")
+                guideline_id = violation.get("guideline_id", "")
+                issue = violation.get("issue", "")
+                fix = violation.get("fix", "")
+
                 html += f"""
                 <div class="issue issue-{severity}">
                     <div class="issue-title">
@@ -394,16 +396,16 @@ class HTMLReporter:
                     <div class="issue-fix">💡 Fix: {fix}</div>
                 </div>
                 """
-        
+
         # Accessibility Issues
         if step_analysis.accessibility_issues:
             html += '<h4 style="margin: 20px 0 10px 0;">Accessibility Issues</h4>'
             for issue in step_analysis.accessibility_issues:
-                severity = issue.get('severity', 'minor')
-                wcag = issue.get('wcag_criterion', '')
-                issue_text = issue.get('issue', '')
-                fix = issue.get('fix', '')
-                
+                severity = issue.get("severity", "minor")
+                wcag = issue.get("wcag_criterion", "")
+                issue_text = issue.get("issue", "")
+                fix = issue.get("fix", "")
+
                 html += f"""
                 <div class="issue issue-{severity}">
                     <div class="issue-title">
@@ -413,8 +415,8 @@ class HTMLReporter:
                     <div class="issue-fix">💡 Fix: {fix}</div>
                 </div>
                 """
-        
-        html += '</div>'
+
+        html += "</div>"
         return html
 
     def _build_footer(self):
@@ -428,8 +430,8 @@ class HTMLReporter:
     def _get_score_class(self, score):
         """Get CSS class based on score."""
         if score >= 90:
-            return 'score-excellent'
+            return "score-excellent"
         elif score >= 75:
-            return 'score-good'
+            return "score-good"
         else:
-            return 'score-poor'
+            return "score-poor"

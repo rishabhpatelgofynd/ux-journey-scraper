@@ -74,10 +74,10 @@ class RobotsChecker:
 
         while True:
             response = input("\nYour choice (y/n): ").strip().lower()
-            if response in ['y', 'yes']:
+            if response in ["y", "yes"]:
                 print("✓ Proceeding with scraping (robots.txt overridden)")
                 return True
-            elif response in ['n', 'no']:
+            elif response in ["n", "no"]:
                 print("✓ Skipping URL (respecting robots.txt)")
                 return False
             else:

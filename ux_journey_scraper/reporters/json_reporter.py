@@ -22,7 +22,7 @@ class JSONReporter:
         report_data = analysis.to_dict()
 
         # Save to file
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(report_data, f, indent=2)
 
         print(f"✓ JSON report saved: {output_path}")
@@ -39,7 +39,7 @@ class JSONReporter:
         Returns:
             str: Path to generated report
         """
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(flow_analysis, f, indent=2)
 
         print(f"✓ Flow analysis JSON saved: {output_path}")

@@ -1,13 +1,14 @@
 """
 Tests for Journey Recorder
 """
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 
 # Since the actual package might not be fully structured for testing,
 # we'll create basic tests that can run once the package structure is in place
+
 
 class TestJourneyRecorder:
     """Test the JourneyRecorder class"""
@@ -21,64 +22,53 @@ class TestJourneyRecorder:
     def test_url_validation(self):
         """Test URL validation logic"""
         # Test valid URLs
-        valid_urls = [
-            'https://example.com',
-            'http://example.com',
-            'https://example.com/path'
-        ]
+        valid_urls = ["https://example.com", "http://example.com", "https://example.com/path"]
         for url in valid_urls:
-            assert url.startswith('http'), f"URL {url} should be valid"
+            assert url.startswith("http"), f"URL {url} should be valid"
 
         # Test invalid URLs
-        invalid_urls = [
-            'not-a-url',
-            'ftp://example.com',
-            'javascript:alert(1)',
-            ''
-        ]
+        invalid_urls = ["not-a-url", "ftp://example.com", "javascript:alert(1)", ""]
         for url in invalid_urls:
             if url:
-                assert not (url.startswith('http://') or url.startswith('https://')), \
-                    f"URL {url} should be invalid"
+                assert not (
+                    url.startswith("http://") or url.startswith("https://")
+                ), f"URL {url} should be invalid"
 
     def test_screenshot_path_generation(self):
         """Test screenshot path generation"""
-        output_dir = Path('/tmp/test-journey')
+        output_dir = Path("/tmp/test-journey")
         step_number = 1
 
-        expected_path = output_dir / f'step-{step_number:03d}.png'
-        actual_path = output_dir / f'step-{step_number:03d}.png'
+        expected_path = output_dir / f"step-{step_number:03d}.png"
+        actual_path = output_dir / f"step-{step_number:03d}.png"
 
         assert actual_path == expected_path
-        assert actual_path.suffix == '.png'
+        assert actual_path.suffix == ".png"
 
     def test_journey_data_structure(self):
         """Test journey data structure is valid"""
         journey_data = {
-            'start_url': 'https://example.com',
-            'steps': [],
-            'metadata': {
-                'created_at': '2026-03-18T00:00:00Z',
-                'version': '0.1.0'
-            }
+            "start_url": "https://example.com",
+            "steps": [],
+            "metadata": {"created_at": "2026-03-18T00:00:00Z", "version": "0.1.0"},
         }
 
-        assert 'start_url' in journey_data
-        assert 'steps' in journey_data
-        assert 'metadata' in journey_data
-        assert isinstance(journey_data['steps'], list)
+        assert "start_url" in journey_data
+        assert "steps" in journey_data
+        assert "metadata" in journey_data
+        assert isinstance(journey_data["steps"], list)
 
     def test_step_data_structure(self):
         """Test individual step data structure"""
         step_data = {
-            'number': 1,
-            'url': 'https://example.com',
-            'title': 'Example Page',
-            'screenshot': 'step-001.png',
-            'timestamp': '2026-03-18T00:00:00Z'
+            "number": 1,
+            "url": "https://example.com",
+            "title": "Example Page",
+            "screenshot": "step-001.png",
+            "timestamp": "2026-03-18T00:00:00Z",
         }
 
-        required_fields = ['number', 'url', 'title', 'screenshot', 'timestamp']
+        required_fields = ["number", "url", "title", "screenshot", "timestamp"]
         for field in required_fields:
             assert field in step_data, f"Step data should have {field} field"
 
@@ -96,24 +86,24 @@ Allow: /public
 """
 
         # Basic parsing test
-        lines = robots_content.strip().split('\n')
-        disallowed_paths = [line.split(': ')[1] for line in lines if 'Disallow' in line]
+        lines = robots_content.strip().split("\n")
+        disallowed_paths = [line.split(": ")[1] for line in lines if "Disallow" in line]
 
-        assert '/admin' in disallowed_paths
-        assert '/private' in disallowed_paths
+        assert "/admin" in disallowed_paths
+        assert "/private" in disallowed_paths
         assert len(disallowed_paths) == 2
 
     def test_path_matching(self):
         """Test URL path matching against robots.txt rules"""
-        disallowed_paths = ['/admin', '/private']
+        disallowed_paths = ["/admin", "/private"]
 
         # Test URLs that should be blocked
-        assert any('/admin' in path for path in disallowed_paths)
-        assert any('/private' in path for path in disallowed_paths)
+        assert any("/admin" in path for path in disallowed_paths)
+        assert any("/private" in path for path in disallowed_paths)
 
         # Test URLs that should be allowed
-        assert not any('/public' in path for path in disallowed_paths)
-        assert not any('/' == path for path in disallowed_paths)
+        assert not any("/public" in path for path in disallowed_paths)
+        assert not any("/" == path for path in disallowed_paths)
 
 
 class TestPIIBlurring:
@@ -123,14 +113,14 @@ class TestPIIBlurring:
         """Test email pattern detection"""
         import re
 
-        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
 
         test_cases = [
-            ('user@example.com', True),
-            ('test.email@domain.co.uk', True),
-            ('invalid.email', False),
-            ('@example.com', False),
-            ('user@', False)
+            ("user@example.com", True),
+            ("test.email@domain.co.uk", True),
+            ("invalid.email", False),
+            ("@example.com", False),
+            ("user@", False),
         ]
 
         for email, should_match in test_cases:
@@ -145,14 +135,14 @@ class TestPIIBlurring:
         import re
 
         # Basic credit card pattern (simplified)
-        cc_pattern = r'\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b'
+        cc_pattern = r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"
 
         test_cases = [
-            ('4532 1234 5678 9010', True),  # Visa format
-            ('4532-1234-5678-9010', True),  # With dashes
-            ('4532123456789010', True),      # No spaces
-            ('1234 5678', False),            # Too short
-            ('abcd efgh ijkl mnop', False)   # Not numbers
+            ("4532 1234 5678 9010", True),  # Visa format
+            ("4532-1234-5678-9010", True),  # With dashes
+            ("4532123456789010", True),  # No spaces
+            ("1234 5678", False),  # Too short
+            ("abcd efgh ijkl mnop", False),  # Not numbers
         ]
 
         for card, should_match in test_cases:
@@ -170,32 +160,32 @@ class TestUXAnalysis:
         """Test guideline matching logic"""
         # Mock guideline data
         guidelines = [
-            {'id': 1, 'category': 'button', 'title': 'Button size'},
-            {'id': 2, 'category': 'form', 'title': 'Form validation'},
-            {'id': 3, 'category': 'navigation', 'title': 'Clear navigation'}
+            {"id": 1, "category": "button", "title": "Button size"},
+            {"id": 2, "category": "form", "title": "Form validation"},
+            {"id": 3, "category": "navigation", "title": "Clear navigation"},
         ]
 
         # Filter by category
-        button_guidelines = [g for g in guidelines if g['category'] == 'button']
+        button_guidelines = [g for g in guidelines if g["category"] == "button"]
         assert len(button_guidelines) == 1
-        assert button_guidelines[0]['id'] == 1
+        assert button_guidelines[0]["id"] == 1
 
     def test_violation_structure(self):
         """Test violation data structure"""
         violation = {
-            'guideline_id': 237,
-            'severity': 'major',
-            'title': 'Button too small',
-            'description': 'Touch target must be at least 44x44px',
-            'fix_suggestion': 'Increase button size to meet minimum touch target'
+            "guideline_id": 237,
+            "severity": "major",
+            "title": "Button too small",
+            "description": "Touch target must be at least 44x44px",
+            "fix_suggestion": "Increase button size to meet minimum touch target",
         }
 
-        required_fields = ['guideline_id', 'severity', 'title', 'description']
+        required_fields = ["guideline_id", "severity", "title", "description"]
         for field in required_fields:
             assert field in violation, f"Violation should have {field} field"
 
-        valid_severities = ['critical', 'major', 'minor']
-        assert violation['severity'] in valid_severities
+        valid_severities = ["critical", "major", "minor"]
+        assert violation["severity"] in valid_severities
 
 
 class TestAccessibilityValidation:
@@ -203,14 +193,14 @@ class TestAccessibilityValidation:
 
     def test_wcag_level_validation(self):
         """Test WCAG level validation"""
-        valid_levels = ['A', 'AA', 'AAA']
+        valid_levels = ["A", "AA", "AAA"]
 
         for level in valid_levels:
-            assert level in ['A', 'AA', 'AAA'], f"Level {level} should be valid"
+            assert level in ["A", "AA", "AAA"], f"Level {level} should be valid"
 
-        invalid_levels = ['B', 'C', 'AAAA']
+        invalid_levels = ["B", "C", "AAAA"]
         for level in invalid_levels:
-            assert level not in ['A', 'AA', 'AAA'], f"Level {level} should be invalid"
+            assert level not in ["A", "AA", "AAA"], f"Level {level} should be invalid"
 
     def test_contrast_ratio_calculation(self):
         """Test color contrast ratio calculation logic"""
