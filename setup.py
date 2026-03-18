@@ -12,11 +12,11 @@ setup(
     name="ux-journey-scraper",
     version="0.1.0",
     author="Rishabh Patel",
-    author_email="rishabh@example.com",
+    author_email="rp87704@gmail.com",
     description="Record and analyze user journeys with automated UX guidelines validation",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/rishabhpatelgofynd/ux-journey-scraper",
+    url="https://github.com/resabh/ux-journey-scraper",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
