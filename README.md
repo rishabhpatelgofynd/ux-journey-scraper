@@ -15,9 +15,23 @@ A powerful tool for UX designers, developers, and QA teams to capture user flows
 
 ## 🚀 Installation
 
+### Basic Installation
+
 ```bash
 pip install ux-journey-scraper
 ```
+
+### Full Installation (with UX Guidelines)
+
+For full UX analysis with 324+ research-backed guidelines:
+
+```bash
+pip install ux-journey-scraper[full]
+```
+
+**Note:** The `[full]` option requires `ecommerce-ux-guidelines` package. Without it, the tool still works but with limited UX analysis capabilities.
+
+### Post-Installation
 
 After installation, install Playwright browsers:
 

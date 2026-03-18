@@ -37,11 +37,13 @@ setup(
         "beautifulsoup4>=4.12.0",
         "requests>=2.31.0",
         "click>=8.1.0",
-        "ecommerce-ux-guidelines>=1.2.0",  # Your UX guidelines package
         "urllib3>=2.0.0",
         "tqdm>=4.66.0",
     ],
     extras_require={
+        "full": [
+            "ecommerce-ux-guidelines>=1.2.0",  # Full UX guidelines analysis
+        ],
         "dev": [
             "pytest>=7.4.0",
             "pytest-asyncio>=0.21.0",
