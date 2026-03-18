@@ -15,17 +15,31 @@ A powerful tool for UX designers, developers, and QA teams to capture user flows
 
 ## 🚀 Installation
 
-### Basic Installation
+### Installation from Source (Recommended)
+
+⚠️ **Note:** Package is not yet published to PyPI. Install from source:
 
 ```bash
-pip install ux-journey-scraper
+# Clone the repository
+git clone https://github.com/resabh/ux-journey-scraper.git
+cd ux-journey-scraper
+
+# Install in editable mode
+pip install -e .
+
+# OR install with full UX guidelines support
+pip install -e ".[full]"
 ```
 
-### Full Installation (with UX Guidelines)
+### Future PyPI Installation (Coming Soon)
 
-For full UX analysis with 324+ research-backed guidelines:
+Once published to PyPI, you'll be able to install with:
 
 ```bash
+# Basic (not yet available)
+pip install ux-journey-scraper
+
+# Full (not yet available)
 pip install ux-journey-scraper[full]
 ```
 
