@@ -1,5 +1,10 @@
 # UX Journey Scraper
 
+[![CI/CD Pipeline](https://github.com/resabh/ux-journey-scraper/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/resabh/ux-journey-scraper/actions)
+[![codecov](https://codecov.io/gh/resabh/ux-journey-scraper/branch/main/graph/badge.svg)](https://codecov.io/gh/resabh/ux-journey-scraper)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **Record and analyze user journeys with automated UX guidelines validation.**
 
 A powerful tool for UX designers, developers, and QA teams to capture user flows through websites and analyze them against 324+ research-backed UX guidelines.

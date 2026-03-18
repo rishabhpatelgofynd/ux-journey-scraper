@@ -47,8 +47,10 @@ setup(
         "dev": [
             "pytest>=7.4.0",
             "pytest-asyncio>=0.21.0",
+            "pytest-cov>=4.1.0",
             "black>=23.0.0",
             "flake8>=6.0.0",
+            "isort>=5.12.0",
         ],
     },
     entry_points={
@@ -59,8 +61,9 @@ setup(
     include_package_data=True,
     keywords="ux user-experience journey scraper playwright testing guidelines accessibility",
     project_urls={
-        "Bug Reports": "https://github.com/rishabhpatelgofynd/ux-journey-scraper/issues",
-        "Source": "https://github.com/rishabhpatelgofynd/ux-journey-scraper",
-        "Documentation": "https://github.com/rishabhpatelgofynd/ux-journey-scraper#readme",
+        "Bug Reports": "https://github.com/resabh/ux-journey-scraper/issues",
+        "Source": "https://github.com/resabh/ux-journey-scraper",
+        "Documentation": "https://github.com/resabh/ux-journey-scraper#readme",
+        "Changelog": "https://github.com/resabh/ux-journey-scraper/blob/main/CHANGELOG.md",
     },
 )
