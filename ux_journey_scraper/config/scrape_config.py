@@ -166,6 +166,37 @@ class ProxySettings:
 
 
 @dataclass
+class UXValidationConfig:
+    """UX validation configuration using Baymard guidelines."""
+
+    enabled: bool = False  # Enable UX validation
+    guidelines_path: Optional[str] = None  # Path to processed_guidelines.json
+    auto_detect_page_type: bool = True  # Automatically detect page types
+    fail_on_violations: bool = False  # Fail crawl if critical violations found
+    min_compliance_score: float = 0.0  # Minimum compliance score (0-100)
+    severity_threshold: str = "medium"  # Report violations at this level or higher: low, medium, high
+    validate_on_capture: bool = True  # Validate pages as they're captured
+    save_validation_report: bool = True  # Save detailed validation report
+
+    def __post_init__(self):
+        """Validate UX validation configuration."""
+        if self.enabled and not self.guidelines_path:
+            raise ValueError(
+                "UX validation enabled but guidelines_path not specified. "
+                "Set guidelines_path to the processed_guidelines.json file."
+            )
+
+        if self.min_compliance_score < 0 or self.min_compliance_score > 100:
+            raise ValueError("min_compliance_score must be between 0 and 100")
+
+        valid_severities = ["low", "medium", "high"]
+        if self.severity_threshold not in valid_severities:
+            raise ValueError(
+                f"severity_threshold must be one of {valid_severities}"
+            )
+
+
+@dataclass
 class BrowserProvider:
     """Browser backend configuration (local Patchright or cloud Browserbase)."""
 
@@ -229,6 +260,7 @@ class ScrapeConfig:
     session_strategy: SessionStrategy = field(default_factory=SessionStrategy)
     proxy: ProxySettings = field(default_factory=ProxySettings)
     browser: BrowserProvider = field(default_factory=BrowserProvider)
+    ux_validation: UXValidationConfig = field(default_factory=UXValidationConfig)
 
     # Runtime fields (not from YAML)
     run_id: Optional[str] = None
