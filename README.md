@@ -5,50 +5,54 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Record and analyze user journeys with automated UX guidelines validation.**
+**Autonomous web crawler for capturing user journeys and analyzing UX patterns.**
 
-A powerful tool for UX designers, developers, and QA teams to capture user flows through websites and analyze them against 324+ research-backed UX guidelines.
+A powerful tool for UX designers, developers, and QA teams to autonomously capture complete user flows through websites. Optionally analyze captured journeys against 324+ research-backed UX guidelines.
 
 ## 🎯 What It Does
 
-- **Record User Journeys**: Capture multi-step user flows through websites
-- **Screenshot Every Step**: Visual documentation of each journey step
-- **UX Analysis**: Automatically apply 324+ e-commerce UX guidelines
-- **Accessibility Checks**: WCAG 2.1 compliance validation
-- **Privacy-Aware**: Blur PII in screenshots automatically
-- **Interactive Reports**: HTML reports with annotated screenshots
+### Core Features (v0.2.0)
+- **🤖 Autonomous Crawling**: Intelligently navigates websites without manual intervention
+- **🎯 Smart Element Detection**: Finds ALL clickables (buttons, links, onclick handlers, ARIA roles)
+- **📸 Journey Capture**: Records complete user flows with screenshots at each step
+- **🔐 Auth Support**: Handles login flows and session management
+- **📋 Form Filling**: Automatically fills checkout forms (test data only)
+- **🕵️ Stealth Mode**: Anti-bot detection with human-like behavior simulation
+- **🔄 SPA Support**: Works with modern single-page applications
+- **🛡️ Privacy-Aware**: Automatically blurs PII in screenshots
+
+### Optional Analysis Features
+- **📊 UX Guidelines**: Analyze journeys against 324+ e-commerce UX guidelines (separate command)
+- **♿ Accessibility Checks**: WCAG 2.1 compliance validation (separate command)
+- **📈 Interactive Reports**: HTML reports with annotated screenshots
 
 ## 🚀 Installation
 
-### Installation from Source (Recommended)
+### PyPI Installation (Recommended)
 
-⚠️ **Note:** Package is not yet published to PyPI. Install from source:
+```bash
+# Install latest version (v0.2.0 - Autonomous Crawling)
+pip install ux-journey-scraper
+
+# OR install with optional UX guidelines analysis support
+pip install ux-journey-scraper[full]
+```
+
+### Installation from Source
 
 ```bash
 # Clone the repository
 git clone https://github.com/resabh/ux-journey-scraper.git
 cd ux-journey-scraper
 
-# Install in editable mode
+# Install in development mode
 pip install -e .
 
 # OR install with full UX guidelines support
 pip install -e ".[full]"
 ```
 
-### Future PyPI Installation (Coming Soon)
-
-Once published to PyPI, you'll be able to install with:
-
-```bash
-# Basic (not yet available)
-pip install ux-journey-scraper
-
-# Full (not yet available)
-pip install ux-journey-scraper[full]
-```
-
-**Note:** The `[full]` option requires `ecommerce-ux-guidelines` package. Without it, the tool still works but with limited UX analysis capabilities.
+**Note:** The `[full]` option includes `ecommerce-ux-guidelines` package for detailed UX analysis. The base installation works fully for autonomous crawling and journey capture without it.
 
 ### Post-Installation
 

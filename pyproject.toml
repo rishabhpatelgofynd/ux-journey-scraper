@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ux-journey-scraper"
 version = "0.2.0"
-description = "Record and analyze user journeys with automated UX guidelines validation"
+description = "Autonomous web crawler for capturing user journeys and analyzing UX patterns"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}

@@ -18,7 +18,7 @@ from ux_journey_scraper.reporters.json_reporter import JSONReporter
 @click.group()
 @click.version_option(version="0.2.0")
 def cli():
-    """UX Journey Scraper - Record and analyze user journeys with UX guidelines."""
+    """UX Journey Scraper - Autonomous web crawler for capturing user journeys."""
     pass
 
 

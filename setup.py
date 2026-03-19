@@ -13,7 +13,7 @@ setup(
     version="0.2.0",
     author="Rishabh Patel",
     author_email="rp87704@gmail.com",
-    description="Record and analyze user journeys with automated UX guidelines validation",
+    description="Autonomous web crawler for capturing user journeys and analyzing UX patterns",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/resabh/ux-journey-scraper",
