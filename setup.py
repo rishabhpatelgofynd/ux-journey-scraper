@@ -10,7 +10,7 @@ long_description = readme_file.read_text(encoding="utf-8") if readme_file.exists
 
 setup(
     name="ux-journey-scraper",
-    version="0.1.0",
+    version="0.2.0",
     author="Rishabh Patel",
     author_email="rp87704@gmail.com",
     description="Record and analyze user journeys with automated UX guidelines validation",
@@ -39,6 +39,9 @@ setup(
         "click>=8.1.0",
         "urllib3>=2.0.0",
         "tqdm>=4.66.0",
+        # v0.2.0 dependencies
+        "pyyaml>=6.0.0",
+        "aiofiles>=23.0.0",
     ],
     extras_require={
         "full": [

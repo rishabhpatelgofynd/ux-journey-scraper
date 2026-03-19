@@ -8,16 +8,69 @@ import click
 
 from ux_journey_scraper.analyzers.journey_flow import JourneyFlowAnalyzer
 from ux_journey_scraper.analyzers.ux_analyzer import UXAnalyzer
+from ux_journey_scraper.config.scrape_config import ScrapeConfig
+from ux_journey_scraper.core.autonomous_crawler import AutonomousCrawler
 from ux_journey_scraper.core.journey_recorder import Journey, JourneyRecorder
 from ux_journey_scraper.reporters.html_reporter import HTMLReporter
 from ux_journey_scraper.reporters.json_reporter import JSONReporter
 
 
 @click.group()
-@click.version_option(version="0.1.0")
+@click.version_option(version="0.2.0")
 def cli():
     """UX Journey Scraper - Record and analyze user journeys with UX guidelines."""
     pass
+
+
+@cli.command()
+@click.option("--config", required=True, help="Path to YAML configuration file")
+@click.option("--output-dir", default="journey_output", help="Output directory for results")
+def crawl(config, output_dir):
+    """Autonomous crawl using YAML configuration (v0.2.0)."""
+    click.echo(f"\n{'='*60}")
+    click.echo(f"  UX JOURNEY AUTONOMOUS CRAWLER v0.2.0")
+    click.echo(f"{'='*60}\n")
+
+    try:
+        # Load configuration
+        click.echo(f"📂 Loading configuration from: {config}")
+        scrape_config = ScrapeConfig.load(config)
+        click.echo(f"✓ Configuration loaded")
+        click.echo(f"   Target: {scrape_config.target['name']}")
+        click.echo(f"   Base URL: {scrape_config.target['base_url']}")
+        click.echo(f"   Platforms: {len(scrape_config.platforms)}")
+        click.echo(f"   Seed URLs: {len(scrape_config.seed_urls)}")
+        click.echo(f"   Max pages: {scrape_config.crawler.max_pages}")
+
+        # Create crawler
+        crawler = AutonomousCrawler(
+            config=scrape_config,
+            output_dir=output_dir,
+        )
+
+        # Run crawl
+        click.echo(f"\n🚀 Starting autonomous crawl...\n")
+        journey = asyncio.run(crawler.crawl())
+
+        # Save journey
+        output_file = Path(output_dir) / "journey.json"
+        journey.save(str(output_file))
+
+        # Show stats
+        stats = crawler.get_stats()
+        click.echo(f"\n{'='*60}")
+        click.echo(f"✅ Crawl complete!")
+        click.echo(f"📊 Pages captured: {stats['pages_captured']}")
+        click.echo(f"📁 Output directory: {output_dir}")
+        click.echo(f"💾 Journey saved to: {output_file}")
+        click.echo(f"{'='*60}\n")
+
+    except FileNotFoundError as e:
+        click.echo(f"\n❌ Configuration file not found: {e}")
+    except Exception as e:
+        click.echo(f"\n❌ Crawl error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 @cli.command()
@@ -28,7 +81,8 @@ def cli():
 @click.option("--respect-robots/--ignore-robots", default=True, help="Respect robots.txt")
 @click.option("--headless/--no-headless", default=False, help="Run browser in headless mode")
 def record(start_url, output, viewport, blur_pii, respect_robots, headless):
-    """Record a user journey interactively."""
+    """[DEPRECATED] Record a user journey interactively. Use 'crawl' for v0.2.0 features."""
+    click.echo("⚠️  WARNING: This command is deprecated. Use 'ux-journey crawl --config <file>' for v0.2.0 features.\n")
     try:
         # Parse viewport
         width, height = map(int, viewport.split("x"))
@@ -140,7 +194,8 @@ def analyze(journey_file, output_dir, format, guidelines):
 @click.option("--analyze/--no-analyze", default=True, help="Run analysis after recording")
 @click.option("--headless/--no-headless", default=False, help="Run browser in headless mode")
 def run(start_url, output, viewport, blur_pii, respect_robots, analyze_flag, headless):
-    """Record and analyze a journey in one command."""
+    """[DEPRECATED] Record and analyze a journey in one command. Use 'crawl' for v0.2.0 features."""
+    click.echo("⚠️  WARNING: This command is deprecated. Use 'ux-journey crawl --config <file>' for v0.2.0 features.\n")
     try:
         # Parse viewport
         width, height = map(int, viewport.split("x"))
