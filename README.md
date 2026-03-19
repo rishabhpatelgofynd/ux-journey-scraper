@@ -5,13 +5,13 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Autonomous web crawler for capturing user journeys and analyzing UX patterns.**
+**Autonomous web crawler for capturing user journeys.**
 
-A powerful tool for UX designers, developers, and QA teams to autonomously capture complete user flows through websites. Optionally analyze captured journeys against 324+ research-backed UX guidelines.
+A powerful tool for UX designers, developers, and QA teams to autonomously capture complete user flows through websites.
 
 ## 🎯 What It Does
 
-### Core Features (v0.2.0)
+### Core Features (v0.3.0)
 - **🤖 Autonomous Crawling**: Intelligently navigates websites without manual intervention
 - **🎯 Smart Element Detection**: Finds ALL clickables (buttons, links, onclick handlers, ARIA roles)
 - **📸 Journey Capture**: Records complete user flows with screenshots at each step
@@ -21,21 +21,13 @@ A powerful tool for UX designers, developers, and QA teams to autonomously captu
 - **🔄 SPA Support**: Works with modern single-page applications
 - **🛡️ Privacy-Aware**: Automatically blurs PII in screenshots
 
-### Optional Analysis Features
-- **📊 UX Guidelines**: Analyze journeys against 324+ e-commerce UX guidelines (separate command)
-- **♿ Accessibility Checks**: WCAG 2.1 compliance validation (separate command)
-- **📈 Interactive Reports**: HTML reports with annotated screenshots
-
 ## 🚀 Installation
 
 ### PyPI Installation (Recommended)
 
 ```bash
-# Install latest version (v0.2.0 - Autonomous Crawling)
+# Install latest version (v0.3.0 - Autonomous Crawling)
 pip install ux-journey-scraper
-
-# OR install with optional UX guidelines analysis support
-pip install ux-journey-scraper[full]
 ```
 
 ### Installation from Source
@@ -64,96 +56,72 @@ playwright install chromium
 
 ## 📖 Quick Start
 
-### Record a Journey
+### Autonomous Crawl (v0.3.0)
 
 ```bash
-# Start recording a user journey
+# Create a configuration file (see scrape-config.example.yaml)
+ux-journey crawl --config scrape-config.yaml --output-dir journey_output/
+
+# The tool will:
+# 1. Check robots.txt (asks for confirmation if needed)
+# 2. Autonomously navigate through the site
+# 3. Capture screenshots at each step
+# 4. Record complete user journey
+# 5. Save journey data as JSON + screenshots
+```
+
+### Manual Recording (Deprecated)
+
+```bash
+# Manually record a journey (interactive mode)
 ux-journey record \
   --start-url https://example.com \
   --output my-journey.json
 
-# The tool will:
-# 1. Check robots.txt (asks for confirmation if needed)
-# 2. Open browser
-# 3. Record each page you visit
-# 4. Capture screenshots
-# 5. Save journey data
-```
-
-### Analyze the Journey
-
-```bash
-# Analyze recorded journey against UX guidelines
-ux-journey analyze my-journey.json
-
-# Generates:
-# - my-journey-report.html (interactive report)
-# - my-journey-analysis.json (detailed analysis)
-# - screenshots/ (annotated images)
-```
-
-### One Command (Record + Analyze)
-
-```bash
-ux-journey run \
-  --start-url https://example.com/checkout \
-  --analyze \
-  --output checkout-journey
+# Note: Use 'crawl' for autonomous navigation
 ```
 
 ## 💡 Use Cases
 
 ### 1. **Competitor Analysis**
-Analyze competitor websites to understand UX patterns and identify opportunities.
+Capture competitor websites to understand user flows and patterns.
 
 ```bash
-ux-journey record --start-url https://competitor.com
+ux-journey crawl --config competitor-config.yaml --output-dir competitor_journey/
 ```
 
-### 2. **UX Audit**
-Perform comprehensive UX audits on existing websites.
+### 2. **User Flow Documentation**
+Document user flows with screenshots for design/QA teams.
 
 ```bash
-ux-journey run \
-  --start-url https://mysite.com \
-  --analyze \
-  --output audit-results
+ux-journey crawl --config mysite-config.yaml --output-dir user_flows/
 ```
 
-### 3. **Pre-Launch Review**
-Validate new features before launch.
+### 3. **Pre-Launch Testing**
+Capture staging sites before launch.
 
 ```bash
-ux-journey record \
-  --start-url https://staging.mysite.com/new-feature \
-  --analyze
+ux-journey crawl --config staging-config.yaml --output-dir staging_test/
 ```
 
-### 4. **User Flow Documentation**
-Document user flows with screenshots and UX validation.
+### 4. **QA Automation**
+Automated journey capture for regression testing.
 
 ```bash
-ux-journey run \
-  --start-url https://mysite.com/signup \
-  --output user-onboarding
+ux-journey crawl --config qa-config.yaml --output-dir qa_snapshots/
 ```
 
 ## 🛠️ Features
 
 ### Journey Recording
+- ✅ Autonomous crawling with priority queue
 - ✅ Multi-step journey capture
 - ✅ Automatic screenshot on each navigation
 - ✅ HTML structure extraction
-- ✅ Form field detection
+- ✅ Form field detection and auto-fill
 - ✅ CTA and button analysis
 - ✅ Navigation element capture
-
-### UX Analysis
-- ✅ 324+ e-commerce UX guidelines
-- ✅ Page-specific validation (checkout, product, etc.)
-- ✅ Priority-based issues (critical, major, minor)
-- ✅ Actionable fix suggestions
-- ✅ Guideline citations
+- ✅ Session management and auth support
 
 ### Accessibility
 - ✅ WCAG 2.1 Level A/AA validation
@@ -193,152 +161,111 @@ Options:
   --headless              Run in headless mode (default: false)
 ```
 
-### `ux-journey analyze`
-
-Analyze a recorded journey.
-
-```bash
-ux-journey analyze [OPTIONS] JOURNEY_FILE
-
-Options:
-  --output-dir TEXT        Output directory for reports (default: ./reports)
-  --format TEXT            Report format: html, json, or both (default: both)
-  --guidelines TEXT        Guideline priority: all, essential, high (default: all)
-```
-
-### `ux-journey run`
-
-Record and analyze in one command.
-
-```bash
-ux-journey run [OPTIONS]
-
-Options:
-  --start-url TEXT         Starting URL (required)
-  --output TEXT            Output prefix (default: journey)
-  --analyze               Run analysis after recording (default: true)
-  --viewport TEXT         Viewport size (default: 1920x1080)
-```
 
 ## 🔧 Python API
 
 ```python
-from ux_journey_scraper import JourneyRecorder, UXAnalyzer
+from ux_journey_scraper import JourneyRecorder, Journey
+from ux_journey_scraper.config import ScrapeConfig
+from ux_journey_scraper.core import AutonomousCrawler
 
-# Record a journey
+# Option 1: Autonomous crawling with config
+config = ScrapeConfig.load("scrape-config.yaml")
+crawler = AutonomousCrawler(config=config, output_dir="journey_output/")
+journey = await crawler.crawl()
+
+# Option 2: Manual recording (deprecated)
 recorder = JourneyRecorder(
     start_url="https://example.com",
     blur_pii=True,
     respect_robots=True
 )
-
 journey = await recorder.record()
 journey.save("my-journey.json")
 
-# Analyze the journey
-analyzer = UXAnalyzer()
-results = analyzer.analyze(journey)
+# Load existing journey
+journey = Journey.load("journey.json")
 
-# Generate report
-results.generate_html_report("report.html")
-results.generate_json_report("report.json")
-
-# Access violations
-for step in results.steps:
-    print(f"Step {step.number}: {step.url}")
-    print(f"  Issues: {len(step.violations)}")
-    for violation in step.violations:
-        print(f"    - {violation.title} (Guideline #{violation.guideline_id})")
+# Access journey data
+for step in journey.steps:
+    print(f"Step {step.step_number}: {step.title}")
+    print(f"  URL: {step.url}")
+    print(f"  Screenshot: {step.screenshot_path}")
 ```
 
-## 📊 Sample Report Output
+## 📊 Sample Journey Output
 
-```
-Journey Analysis Report
-=======================
-
-Journey: Checkout Flow (https://example.com)
-Steps: 5
-Overall Score: 72.5/100
-
-Step 1: Homepage (/)
-  Score: 85.0/100
-  Issues: 3 (1 major, 2 minor)
-  Screenshot: screenshots/step-001.png
-
-Step 2: Product Listing (/products)
-  Score: 78.0/100
-  Issues: 5 (2 major, 3 minor)
-  Screenshot: screenshots/step-002.png
-
-Step 3: Product Detail (/products/123)
-  Score: 65.0/100
-  Issues: 8 (1 critical, 3 major, 4 minor)
-  Screenshot: screenshots/step-003.png
-  ⚠️  Critical Issue: "Add to Cart" button too small (< 44x44px)
-      → Guideline #237: Touch targets must be at least 44x44px
-
-...
+```json
+{
+  "start_url": "https://example.com",
+  "start_time": "2026-03-19T12:00:00Z",
+  "end_time": "2026-03-19T12:05:30Z",
+  "viewport": [1920, 1080],
+  "steps": [
+    {
+      "step_number": 1,
+      "url": "https://example.com",
+      "title": "Homepage",
+      "screenshot_path": "screenshots/step-001.png",
+      "html_snapshot": "...",
+      "page_data": {
+        "forms": [...],
+        "buttons": [...],
+        "links": [...]
+      }
+    },
+    ...
+  ]
+}
 ```
 
 ## 🔍 How It Works
 
-1. **Recording Phase**
-   - Opens browser (Playwright)
-   - Checks robots.txt (asks for confirmation if restricted)
-   - Waits for user to navigate through the site
-   - Captures screenshot + HTML on each navigation
-   - Records journey steps in JSON
+1. **Configuration**
+   - YAML config defines seed URLs, auth, form fill settings
+   - Priority queue manages navigation strategy
 
-2. **Analysis Phase**
-   - Loads journey data
-   - Applies UX guidelines (from ecommerce-ux-guidelines)
-   - Runs accessibility checks
-   - Generates issue annotations
-   - Blurs PII in screenshots
-   - Creates interactive report
+2. **Autonomous Crawling**
+   - Launches stealth browser (anti-bot detection)
+   - Navigates autonomously using priority queue
+   - Finds ALL clickables (buttons, links, ARIA roles, onclick handlers)
+   - Handles login flows and session management
+   - Fills forms with test data (payment safeguards)
 
-3. **Reporting Phase**
-   - Generates HTML with embedded screenshots
-   - Creates visual journey map
-   - Exports JSON for automation
-   - Annotates screenshots with issue markers
+3. **Capture**
+   - Waits for page readiness (DOM stable, no spinners, lazy-load complete)
+   - Captures screenshot + HTML at each step
+   - Blurs PII automatically
+   - Records all page data (forms, buttons, links)
 
-## 🧩 Integration with ecommerce-ux-guidelines
-
-This tool depends on the `ecommerce-ux-guidelines` package for UX validation:
-
-```python
-from ecommerce_ux_guidelines import GuidelineEngine, Validator, AccessibilityValidator
-
-# UX Journey Scraper uses these internally
-engine = GuidelineEngine()
-validator = Validator(engine)
-a11y_validator = AccessibilityValidator(engine)
-```
+4. **Output**
+   - Saves journey JSON with all steps
+   - Screenshots folder with PII blurred
+   - Complete DOM snapshots for analysis
 
 ## 🛣️ Roadmap
 
-### Phase 1 (Current)
+### v0.3.0 (Current) - Pure Journey Capture
+- ✅ Autonomous crawling with priority queue
 - ✅ Desktop web journey recording
-- ✅ UX guidelines validation
-- ✅ HTML report generation
-- ✅ PII blur
+- ✅ Smart element detection (4 strategies)
+- ✅ Auth support and session management
+- ✅ Form auto-fill with safeguards
+- ✅ PII blur in screenshots
 - ✅ robots.txt handling
+- ✅ Stealth mode (anti-bot detection)
 
-### Phase 2 (Coming Soon)
-- ⬜ Mobile web recording (responsive viewports)
-- ⬜ Automated crawling (follow links automatically)
-- ⬜ Visual journey flow diagrams
-- ⬜ PDF export
-- ⬜ Slack/email notifications
-
-### Phase 3 (Future)
-- ⬜ Mobile app recording (iOS/Android via Appium)
-- ⬜ A/B testing comparison
-- ⬜ Historical journey tracking
-- ⬜ Team collaboration features
+### Future Enhancements
+- ⬜ Mobile viewports (responsive crawling)
+- ⬜ Multi-page site mapping
+- ⬜ CAPTCHA handling improvements
+- ⬜ Visual regression detection
+- ⬜ Performance metrics capture
 - ⬜ CI/CD integration
+
+### Analysis Features → Moved to BayMAAR
+- UX guidelines analysis is now in the separate BayMAAR Analysis Engine (private)
+- This package remains a pure journey capture tool
 
 ## 🤝 Contributing
 

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ux-journey-scraper"
-version = "0.2.0"
-description = "Autonomous web crawler for capturing user journeys and analyzing UX patterns"
+version = "0.3.0"
+description = "Autonomous web crawler for capturing user journeys"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
@@ -39,9 +39,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-full = [
-    "ecommerce-ux-guidelines>=1.2.0",
-]
 dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",

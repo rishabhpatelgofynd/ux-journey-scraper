@@ -10,10 +10,10 @@ long_description = readme_file.read_text(encoding="utf-8") if readme_file.exists
 
 setup(
     name="ux-journey-scraper",
-    version="0.2.0",
+    version="0.3.0",
     author="Rishabh Patel",
     author_email="rp87704@gmail.com",
-    description="Autonomous web crawler for capturing user journeys and analyzing UX patterns",
+    description="Autonomous web crawler for capturing user journeys",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/resabh/ux-journey-scraper",
@@ -44,9 +44,6 @@ setup(
         "aiofiles>=23.0.0",
     ],
     extras_require={
-        "full": [
-            "ecommerce-ux-guidelines>=1.2.0",  # Full UX guidelines analysis
-        ],
         "dev": [
             "pytest>=7.4.0",
             "pytest-asyncio>=0.21.0",
