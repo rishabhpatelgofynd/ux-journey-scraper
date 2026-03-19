@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ux-journey-scraper"
-version = "0.1.0"
+version = "0.2.0"
 description = "Record and analyze user journeys with automated UX guidelines validation"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -34,6 +34,8 @@ dependencies = [
     "click>=8.1.0",
     "urllib3>=2.0.0",
     "tqdm>=4.66.0",
+    "pyyaml>=6.0.0",
+    "aiofiles>=23.0.0",
 ]
 
 [project.optional-dependencies]
