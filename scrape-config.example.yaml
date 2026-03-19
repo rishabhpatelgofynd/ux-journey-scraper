@@ -1,0 +1,90 @@
+# UX Journey Scraper v0.2.0 - Configuration Example
+# This file demonstrates all available configuration options for autonomous crawling
+
+# Target website configuration
+target:
+  name: "Example E-commerce"  # Human-readable name for this crawl
+  base_url: "https://example.com"  # Base URL to crawl
+
+# Platform configurations (desktop, mobile, tablet)
+# You can configure multiple platforms to crawl the same site
+platforms:
+  - type: web_desktop  # Options: web_desktop, web_mobile, web_tablet
+    viewport:
+      width: 1920
+      height: 1080
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
+
+  # Uncomment to add mobile platform
+  # - type: web_mobile
+  #   viewport:
+  #     width: 375
+  #     height: 812
+  #   locale: "en-IN"
+  #   timezone_id: "Asia/Kolkata"
+
+# Authentication configuration
+auth:
+  logged_out: true  # Crawl as logged-out user
+  logged_in: false  # Set to true to crawl as logged-in user
+
+  # For logged_in: true, provide credentials
+  # credentials:
+  #   username: "testuser@example.com"
+  #   password: "testpassword123"
+  # login_url: "https://example.com/login"
+  # login_success_indicator: "/dashboard"  # URL path or CSS selector that indicates successful login
+  # session_file: "session.json"  # Where to save/load session
+
+# Seed URLs - starting points for the crawl
+seed_urls:
+  - "https://example.com"
+  - "https://example.com/products"
+  # Add more seed URLs as needed
+
+# Form filling configuration
+# All test data - NEVER use real information
+form_fill:
+  # Personal information
+  first_name: "Test"
+  last_name: "User"
+  email: "testuser@example.com"
+  phone: "+91 98765 43210"
+
+  # Address
+  address_line1: "123 Test Street"
+  address_line2: "Apartment 4B"
+  city: "Mumbai"
+  state: "Maharashtra"
+  postal_code: "400001"
+  country: "IN"
+
+  # Payment - TEST CARDS ONLY
+  # These are standard test cards that will NOT process real payments
+  card_number: "4111111111111111"  # Visa test card
+  card_expiry_month: "12"
+  card_expiry_year: "2025"
+  card_cvv: "123"
+  card_name: "Test User"
+
+  # Company information
+  organization: "Test Company"
+  job_title: "QA Engineer"
+
+  # Birthday
+  birthday_day: "15"
+  birthday_month: "06"
+  birthday_year: "1990"
+
+# Crawler behavior configuration
+crawler:
+  max_depth: 8  # Maximum click depth from seed URLs (default: 8)
+  max_pages: 200  # Maximum screens to capture (default: 200)
+  delay_ms: 800  # Base delay between actions in milliseconds (default: 800)
+  delay_jitter_ms: 400  # Random jitter added to delay (default: 400)
+  timeout_per_page_ms: 15000  # Maximum wait per page in milliseconds (default: 15000)
+  max_retries: 2  # Retries on page load failure (default: 2)
+  respect_robots: true  # Check robots.txt before crawling (default: true)
+  follow_external_links: false  # Stay within base_url domain (default: false)
