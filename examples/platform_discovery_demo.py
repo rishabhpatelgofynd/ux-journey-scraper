@@ -145,13 +145,13 @@ async def demo_usage_scenario():
     print()
     print("Step 3: Run UX checks on all platforms")
     print("-" * 80)
-    print("(This would be done by the private baymaar-guidelines package)")
+    print("(This would be done by a UX testing framework)")
     print()
 
     print("💡 Next steps:")
     print("   1. Export this data to JSON")
-    print("   2. Import in baymaar-guidelines")
-    print("   3. Run 75+ UX checks on all platforms")
+    print("   2. Import into your UX testing framework")
+    print("   3. Run automated UX checks on all platforms")
     print("   4. Cross-reference failures across platforms")
 
     print()
