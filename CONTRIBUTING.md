@@ -2,6 +2,35 @@
 
 Thank you for your interest in contributing to UX Journey Scraper! This document provides guidelines and instructions for contributing.
 
+## ⚠️ Privacy & Scope
+
+**IMPORTANT**: UX Journey Scraper is a **public package** (MIT License).
+
+### What Belongs Here
+
+✅ **Allowed**:
+- Journey capture functionality
+- Screenshot handling
+- Browser automation
+- Generic UX utilities
+- Test data and mock examples
+- Public documentation
+
+❌ **NOT Allowed**:
+- Proprietary UX guidelines or research data
+- Integration with private analysis engines
+- Hard-coded paths to private data
+- Baymard Institute proprietary content
+
+### Package Scope
+
+This package is focused on **journey capture only**. UX analysis features have been moved to a separate private repository (BayMAAR).
+
+**If you want to add UX analysis features**, please understand:
+- This package captures journeys (screenshots + data)
+- Analysis happens in a separate private system
+- Integration is via data files (journey.json), not code coupling
+
 ## Development Setup
 
 ### Prerequisites
@@ -50,24 +79,34 @@ We use several tools to ensure code quality:
 Run these commands before committing your changes:
 
 ```bash
-# Format code
+# 1. Privacy check (CRITICAL)
+git status  # Look for: no proprietary data files
+git diff    # Review: no hard-coded private paths
+
+# 2. Format code
 black ux_journey_scraper/ tests/
 
-# Sort imports
+# 3. Sort imports
 isort ux_journey_scraper/ tests/
 
-# Run linting
+# 4. Run linting
 flake8 ux_journey_scraper/ tests/
 
-# Run tests
+# 5. Run tests
 pytest tests/ -v
 ```
 
-Or use this one-liner:
+Or use this one-liner (after privacy check):
 
 ```bash
 black . && isort . && flake8 . && pytest tests/
 ```
+
+**Privacy Checklist** (run before every commit):
+- [ ] No proprietary data files added (*.json with guidelines, etc.)
+- [ ] No hard-coded paths to private data (`.local/`, `baymard_backup/`, etc.)
+- [ ] No integration code that requires private dependencies
+- [ ] Package remains standalone (no private imports)
 
 ### Running Tests
 
