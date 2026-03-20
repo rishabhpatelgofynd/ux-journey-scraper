@@ -13,15 +13,6 @@ from ux_journey_scraper.core.page_analyzer import PageAnalyzer
 from ux_journey_scraper.core.robots_checker import RobotsChecker
 from ux_journey_scraper.core.screenshot_manager import ScreenshotManager
 
-# Import UX validators
-try:
-    from ux_journey_scraper.validators import BaymardValidator, GuidelineIndex
-    VALIDATORS_AVAILABLE = True
-except ImportError:
-    VALIDATORS_AVAILABLE = False
-    BaymardValidator = None
-    GuidelineIndex = None
-
 
 class JourneyStep:
     """Represents a single step in a user journey."""
