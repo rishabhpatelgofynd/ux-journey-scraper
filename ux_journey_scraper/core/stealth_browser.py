@@ -215,7 +215,7 @@ async def _create_local_patchright(
         java_script_enabled=True,
         has_touch=platform.type in ("web_mobile", "web_tablet"),
         is_mobile=platform.type == "web_mobile",
-        device_scale_factor=2.0 if platform.type == "web_mobile" else 1.0,
+        device_scale_factor=2.0 if platform.type in ("web_mobile", "web_tablet") else 1.0,
         extra_http_headers={
             "Accept-Language": "en-US,en;q=0.9,hi-IN;q=0.8,hi;q=0.7",
             "Accept-Encoding": "gzip, deflate, br",
@@ -365,7 +365,8 @@ def _default_ua(platform_type: str) -> str:
         ),
         "web_tablet": (
             "Mozilla/5.0 (iPad; CPU OS 17_4_1 like Mac OS X) "
-            "AppleWebKit/605.1.15"
+            "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+            "Version/17.4.1 Mobile/15E148 Safari/604.1"
         ),
     }
     return uas.get(platform_type, uas["web_desktop"])

@@ -12,7 +12,7 @@ from ux_journey_scraper.core.journey_recorder import Journey, JourneyRecorder
 
 
 @click.group()
-@click.version_option(version="0.3.0")
+@click.version_option(version="0.4.0")
 def cli():
     """UX Journey Scraper - Autonomous web crawler for capturing user journeys."""
     pass
@@ -22,9 +22,9 @@ def cli():
 @click.option("--config", required=True, help="Path to YAML configuration file")
 @click.option("--output-dir", default="journey_output", help="Output directory for results")
 def crawl(config, output_dir):
-    """Autonomous crawl using YAML configuration (v0.2.0)."""
+    """Autonomous crawl using YAML configuration (v0.4.0)."""
     click.echo(f"\n{'='*60}")
-    click.echo(f"  UX JOURNEY AUTONOMOUS CRAWLER v0.2.0")
+    click.echo(f"  UX JOURNEY AUTONOMOUS CRAWLER v0.4.0")
     click.echo(f"{'='*60}\n")
 
     try:
@@ -38,27 +38,33 @@ def crawl(config, output_dir):
         click.echo(f"   Seed URLs: {len(scrape_config.seed_urls)}")
         click.echo(f"   Max pages: {scrape_config.crawler.max_pages}")
 
-        # Create crawler
-        crawler = AutonomousCrawler(
-            config=scrape_config,
-            output_dir=output_dir,
-        )
+        # Run crawl for each platform
+        click.echo(f"\n🚀 Starting multi-platform crawl...\n")
+        total_pages = 0
+        for platform in scrape_config.platforms:
+            platform_dir = Path(output_dir) / platform.type
+            click.echo(f"▶ Platform: {platform.type} ({platform.viewport['width']}x{platform.viewport['height']})")
 
-        # Run crawl
-        click.echo(f"\n🚀 Starting autonomous crawl...\n")
-        journey = asyncio.run(crawler.crawl())
+            crawler = AutonomousCrawler(
+                config=scrape_config,
+                output_dir=str(platform_dir),
+                platform=platform,
+            )
 
-        # Save journey
-        output_file = Path(output_dir) / "journey.json"
-        journey.save(str(output_file))
+            journey = asyncio.run(crawler.crawl())
 
-        # Show stats
-        stats = crawler.get_stats()
+            output_file = platform_dir / "journey.json"
+            journey.save(str(output_file))
+
+            stats = crawler.get_stats()
+            pages = stats['pages_captured']
+            total_pages += pages
+            click.echo(f"  ✓ {platform.type}: {pages} pages → {output_file}")
+
         click.echo(f"\n{'='*60}")
-        click.echo(f"✅ Crawl complete!")
-        click.echo(f"📊 Pages captured: {stats['pages_captured']}")
+        click.echo(f"✅ All platforms complete!")
+        click.echo(f"📊 Total pages captured: {total_pages}")
         click.echo(f"📁 Output directory: {output_dir}")
-        click.echo(f"💾 Journey saved to: {output_file}")
         click.echo(f"{'='*60}\n")
 
     except FileNotFoundError as e:
