@@ -10,27 +10,72 @@ from typing import Any, Dict, List, Optional
 
 
 @dataclass
-class PlatformConfig:
-    """Configuration for a specific platform (desktop, mobile, tablet)."""
+class NativeAppConfig:
+    """Configuration for native Android/iOS app testing via Appium."""
 
-    type: str  # "web_desktop", "web_mobile", "web_tablet"
-    viewport: Dict[str, int]  # {"width": 1920, "height": 1080}
+    appium_server: str = "http://localhost:4723"
+    app_package: Optional[str] = None      # Android: "com.amazon.mShop.android.shopping"
+    app_activity: Optional[str] = None     # Android: ".HomeActivity"
+    bundle_id: Optional[str] = None        # iOS: "com.amazon.Amazon"
+    apk_path: Optional[str] = None         # Install from local APK
+    ipa_path: Optional[str] = None         # Install from local IPA
+    avd_name: Optional[str] = None         # Android AVD emulator name
+    simulator_udid: Optional[str] = None   # iOS Simulator UDID
+    device_name: Optional[str] = None      # "Pixel 7" / "iPhone 15 Pro"
+    platform_version: Optional[str] = None # "14.0" / "17.4"
+
+
+@dataclass
+class PlatformConfig:
+    """Configuration for a specific platform (desktop, mobile, tablet, or native app)."""
+
+    type: str  # "web_desktop", "web_mobile", "web_tablet", "native_android", "native_ios"
+    viewport: Optional[Dict[str, int]] = None  # {"width": 1920, "height": 1080} — web only
     user_agent: Optional[str] = None
     locale: str = "en-IN"
     timezone_id: str = "Asia/Kolkata"
+    native: Optional[NativeAppConfig] = None  # Required for native_android / native_ios
+
+    @property
+    def is_native(self) -> bool:
+        """Return True for native_android and native_ios platform types."""
+        return self.type in ("native_android", "native_ios")
+
+    @property
+    def is_web(self) -> bool:
+        """Return True for web_desktop, web_mobile, and web_tablet platform types."""
+        return self.type in ("web_desktop", "web_mobile", "web_tablet")
 
     def __post_init__(self):
         """Validate platform configuration."""
-        valid_types = ["web_desktop", "web_mobile", "web_tablet"]
+        valid_types = ["web_desktop", "web_mobile", "web_tablet", "native_android", "native_ios"]
         if self.type not in valid_types:
             raise ValueError(f"Invalid platform type: {self.type}. Must be one of {valid_types}")
 
-        required_keys = {"width", "height"}
-        if not required_keys.issubset(self.viewport.keys()):
-            raise ValueError(f"Viewport must contain {required_keys}")
+        if self.is_web:
+            if self.viewport is None:
+                raise ValueError(f"Platform type '{self.type}' requires a viewport configuration")
+            required_keys = {"width", "height"}
+            if not required_keys.issubset(self.viewport.keys()):
+                raise ValueError(f"Viewport must contain {required_keys}")
+            if self.viewport["width"] <= 0 or self.viewport["height"] <= 0:
+                raise ValueError("Viewport dimensions must be positive")
 
-        if self.viewport["width"] <= 0 or self.viewport["height"] <= 0:
-            raise ValueError("Viewport dimensions must be positive")
+        if self.is_native:
+            if self.native is None:
+                raise ValueError(
+                    f"Platform type '{self.type}' requires a 'native' configuration block"
+                )
+            has_android_id = self.native.app_package or self.native.apk_path
+            has_ios_id = self.native.bundle_id or self.native.ipa_path
+            if self.type == "native_android" and not has_android_id:
+                raise ValueError(
+                    "native_android requires 'app_package' or 'apk_path' in the native config"
+                )
+            if self.type == "native_ios" and not has_ios_id:
+                raise ValueError(
+                    "native_ios requires 'bundle_id' or 'ipa_path' in the native config"
+                )
 
 
 @dataclass
@@ -329,16 +374,20 @@ class ScrapeConfig:
 
         # Parse platforms
         platforms_data = data.get("platforms", [])
-        platforms = [
-            PlatformConfig(
-                type=p.get("type"),
-                viewport=p.get("viewport", {}),
-                user_agent=p.get("user_agent"),
-                locale=p.get("locale", "en-IN"),
-                timezone_id=p.get("timezone_id", "Asia/Kolkata"),
+        platforms = []
+        for p in platforms_data:
+            native_data = p.get("native")
+            native_config = NativeAppConfig(**native_data) if native_data else None
+            platforms.append(
+                PlatformConfig(
+                    type=p.get("type"),
+                    viewport=p.get("viewport") or None,
+                    user_agent=p.get("user_agent"),
+                    locale=p.get("locale", "en-IN"),
+                    timezone_id=p.get("timezone_id", "Asia/Kolkata"),
+                    native=native_config,
+                )
             )
-            for p in platforms_data
-        ]
 
         # Parse auth
         auth_data = data.get("auth", {})
@@ -406,10 +455,22 @@ class ScrapeConfig:
             "platforms": [
                 {
                     "type": p.type,
-                    "viewport": p.viewport,
+                    **({"viewport": p.viewport} if p.viewport else {}),
                     "user_agent": p.user_agent,
                     "locale": p.locale,
                     "timezone_id": p.timezone_id,
+                    **({"native": {
+                        "appium_server": p.native.appium_server,
+                        "app_package": p.native.app_package,
+                        "app_activity": p.native.app_activity,
+                        "bundle_id": p.native.bundle_id,
+                        "apk_path": p.native.apk_path,
+                        "ipa_path": p.native.ipa_path,
+                        "avd_name": p.native.avd_name,
+                        "simulator_udid": p.native.simulator_udid,
+                        "device_name": p.native.device_name,
+                        "platform_version": p.native.platform_version,
+                    }} if p.native else {}),
                 }
                 for p in self.platforms
             ],

@@ -11,10 +11,11 @@ A powerful tool for UX designers, developers, and QA teams to autonomously captu
 
 ## 🎯 What It Does
 
-### Core Features (v0.3.0)
+### Core Features (v0.4.0)
 - **🤖 Autonomous Crawling**: Intelligently navigates websites without manual intervention
 - **🎯 Smart Element Detection**: Finds ALL clickables (buttons, links, onclick handlers, ARIA roles)
 - **📸 Journey Capture**: Records complete user flows with screenshots at each step
+- **📱 Multi-Platform**: Crawls desktop, mobile, and tablet in a single run
 - **🔐 Auth Support**: Handles login flows and session management
 - **📋 Form Filling**: Automatically fills checkout forms (test data only)
 - **🕵️ Stealth Mode**: Anti-bot detection with human-like behavior simulation
@@ -145,6 +146,57 @@ ux-journey crawl --config qa-config.yaml --output-dir qa_snapshots/
 
 ## 📋 CLI Reference
 
+## 🖥️ Platform Support
+
+| Platform | Type | Emulation |
+|---|---|---|
+| Desktop (1920×1080) | `web_desktop` | Chromium, Windows UA |
+| Mobile iPhone 14 Pro (390×844) | `web_mobile` | Touch events, iPhone UA, 2× DPR |
+| Tablet iPad Air (820×1180) | `web_tablet` | Touch events, iPad UA, 2× DPR |
+| Native Android app | `native_android` | Phase 2 (v0.5.0, requires Appium) |
+| Native iOS app | `native_ios` | Phase 2 (v0.5.0, requires Appium + Xcode) |
+
+All web platform types are **browser-based emulation** via Playwright viewport + UA spoofing — no real devices required.
+
+### Multi-Platform Crawling
+
+Specify multiple platforms in your config to crawl all of them in one run:
+
+```yaml
+platforms:
+  - type: web_desktop
+    viewport: { width: 1920, height: 1080 }
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
+
+  - type: web_mobile        # iPhone 14 Pro
+    viewport: { width: 390, height: 844 }
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
+
+  - type: web_tablet        # iPad Air
+    viewport: { width: 820, height: 1180 }
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
+```
+
+Output is organized per platform:
+
+```
+journey_output/
+  web_desktop/
+    journey.json
+    screenshots/
+  web_mobile/
+    journey.json
+    screenshots/
+  web_tablet/
+    journey.json
+    screenshots/
+```
+
+---
+
 ### `ux-journey record`
 
 Record a user journey interactively.
@@ -245,9 +297,12 @@ for step in journey.steps:
 
 ## 🛣️ Roadmap
 
-### v0.3.0 (Current) - Pure Journey Capture
+### v0.4.0 (Current) - Multi-Platform Web Crawling
 - ✅ Autonomous crawling with priority queue
 - ✅ Desktop web journey recording
+- ✅ Mobile viewport emulation (iPhone 14 Pro)
+- ✅ Tablet viewport emulation (iPad Air)
+- ✅ Multi-platform crawl in a single run (per-platform output dirs)
 - ✅ Smart element detection (4 strategies)
 - ✅ Auth support and session management
 - ✅ Form auto-fill with safeguards
@@ -255,8 +310,15 @@ for step in journey.steps:
 - ✅ robots.txt handling
 - ✅ Stealth mode (anti-bot detection)
 
+### v0.5.0 (Next) - Native App Testing (Appium)
+- ⬜ Native Android app crawling (UiAutomator2)
+- ⬜ Native iOS app crawling (XCUITest, macOS only)
+- ⬜ Appium session setup and element detection via accessibility tree
+- ⬜ Integration with `platform_discovery.py` (bundle ID / package name lookup)
+
+  **Requirements**: `pip install Appium-Python-Client`, Android SDK + ADB or Xcode + iOS Simulator
+
 ### Future Enhancements
-- ⬜ Mobile viewports (responsive crawling)
 - ⬜ Multi-page site mapping
 - ⬜ CAPTCHA handling improvements
 - ⬜ Visual regression detection

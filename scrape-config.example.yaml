@@ -17,13 +17,19 @@ platforms:
     locale: "en-IN"
     timezone_id: "Asia/Kolkata"
 
-  # Uncomment to add mobile platform
-  # - type: web_mobile
-  #   viewport:
-  #     width: 375
-  #     height: 812
-  #   locale: "en-IN"
-  #   timezone_id: "Asia/Kolkata"
+  - type: web_mobile   # iPhone 14 Pro
+    viewport:
+      width: 390
+      height: 844
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
+
+  - type: web_tablet   # iPad Air
+    viewport:
+      width: 820
+      height: 1180
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
 
 # Authentication configuration
 auth:

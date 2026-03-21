@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-21
+
+### Added - Multi-Platform Web Crawling
+
+**Major Feature**: `ux-journey crawl` now loops over all configured platforms in a single run, producing per-platform output directories.
+
+#### Multi-Platform Crawling
+- **All platforms in one run**: Configure `web_desktop`, `web_mobile`, and `web_tablet` in YAML; the crawler runs each sequentially and saves results to separate subdirs (`journey_output/web_desktop/`, `journey_output/web_mobile/`, `journey_output/web_tablet/`)
+- **Tablet support**: `web_tablet` (iPad Air 820×1180) is now a first-class platform alongside desktop and mobile
+- **Per-platform output**: Each platform gets its own `journey.json` and `screenshots/` folder
+
+#### Bug Fixes
+- **Tablet UA string**: Fixed truncated iPad user-agent (was missing `(KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1` suffix)
+- **Tablet `device_scale_factor`**: Fixed — tablet now correctly gets `device_scale_factor=2.0` (same as mobile); was incorrectly using `1.0`
+
+### Changed
+- **Version**: Bumped to 0.4.0
+- **CLI**: `crawl` command header now shows `v0.4.0`; output summary shows per-platform page counts
+
+### Added - Dependencies
+- `aiohttp>=3.9.0`: Required by `platform_discovery.py` (was imported but missing from `pyproject.toml`)
+
+### Roadmap - Phase 2 (v0.5.0)
+Native iOS/Android app testing via Appium is documented as the next milestone. Stubs (`platform_discovery.py`, `app_architecture_detector.py`) are preserved for Phase 2 integration.
+
 ## [0.2.0] - 2026-03-19
 
 ### Added - Autonomous Crawling
