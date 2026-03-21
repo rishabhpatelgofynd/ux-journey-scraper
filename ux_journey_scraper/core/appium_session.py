@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from appium import webdriver as appium_webdriver
+    from appium.options.common.base import AppiumOptions
     _APPIUM_AVAILABLE = True
 except ImportError:
     _APPIUM_AVAILABLE = False
@@ -57,7 +58,12 @@ class AppiumSession:
             caps = self._ios_caps(platform.native)
 
         logger.info(f"Connecting to Appium at {platform.native.appium_server} ({platform.type})")
-        driver = appium_webdriver.Remote(platform.native.appium_server, caps)
+        options = AppiumOptions()
+        options.load_capabilities(caps)
+        driver = appium_webdriver.Remote(
+            command_executor=platform.native.appium_server,
+            options=options,
+        )
         logger.info("Appium session started")
         return driver
 
@@ -74,6 +80,7 @@ class AppiumSession:
         if n.avd_name:         caps["avd"] = n.avd_name
         if n.device_name:      caps["deviceName"] = n.device_name
         if n.platform_version: caps["platformVersion"] = n.platform_version
+        if n.extra_caps:       caps.update(n.extra_caps)
         return caps
 
     def _ios_caps(self, n) -> Dict:
@@ -83,11 +90,13 @@ class AppiumSession:
             "automationName": "XCUITest",
             "noReset": True,
         }
-        if n.bundle_id:        caps["bundleId"] = n.bundle_id
-        if n.ipa_path:         caps["app"] = n.ipa_path
-        if n.simulator_udid:   caps["udid"] = n.simulator_udid
-        if n.device_name:      caps["deviceName"] = n.device_name
-        if n.platform_version: caps["platformVersion"] = n.platform_version
+        if n.bundle_id:          caps["bundleId"] = n.bundle_id
+        if n.ipa_path:           caps["app"] = n.ipa_path
+        if n.simulator_udid:     caps["udid"] = n.simulator_udid
+        if n.device_name:        caps["deviceName"] = n.device_name
+        if n.platform_version:   caps["platformVersion"] = n.platform_version
+        if n.safari_initial_url: caps["safariInitialUrl"] = n.safari_initial_url
+        if n.extra_caps:         caps.update(n.extra_caps)
         return caps
 
     def _validate_server(self, url: str) -> None:

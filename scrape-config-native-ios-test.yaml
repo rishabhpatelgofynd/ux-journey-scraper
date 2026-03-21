@@ -1,0 +1,26 @@
+# Native iOS test config — Safari on iPhone 17 Pro Simulator → Amazon e-commerce
+# Run: ux-journey crawl --config scrape-config-native-ios-test.yaml --output-dir test_native_ios/
+
+target:
+  name: "Amazon iOS Safari Test"
+  base_url: "https://www.amazon.in"
+
+platforms:
+  - type: native_ios
+    native:
+      appium_server: "http://localhost:4723"
+      bundle_id: "com.apple.mobilesafari"
+      device_name: "iPhone 17 Pro"
+      platform_version: "26.3"
+      simulator_udid: "8AE5AABC-CAF1-4063-B340-18737BE0E0A8"
+      safari_initial_url: "https://www.amazon.in"
+
+auth:
+  logged_out: true
+  logged_in: false
+
+seed_urls:
+  - "https://www.amazon.in"
+
+crawler:
+  max_pages: 8

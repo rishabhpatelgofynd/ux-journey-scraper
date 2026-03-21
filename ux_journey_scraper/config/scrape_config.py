@@ -23,6 +23,8 @@ class NativeAppConfig:
     simulator_udid: Optional[str] = None   # iOS Simulator UDID
     device_name: Optional[str] = None      # "Pixel 7" / "iPhone 15 Pro"
     platform_version: Optional[str] = None # "14.0" / "17.4"
+    safari_initial_url: Optional[str] = None  # iOS Safari: open this URL on launch
+    extra_caps: Optional[Dict[str, Any]] = None  # Any additional Appium capabilities
 
 
 @dataclass
