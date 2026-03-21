@@ -11,24 +11,41 @@ A powerful tool for UX designers, developers, and QA teams to autonomously captu
 
 ## 🎯 What It Does
 
-### Core Features (v0.4.0)
+### Core Features (v0.5.0)
 - **🤖 Autonomous Crawling**: Intelligently navigates websites without manual intervention
 - **🎯 Smart Element Detection**: Finds ALL clickables (buttons, links, onclick handlers, ARIA roles)
 - **📸 Journey Capture**: Records complete user flows with screenshots at each step
-- **📱 Multi-Platform**: Crawls desktop, mobile, and tablet in a single run
+- **📱 Multi-Platform**: Crawls desktop, mobile, tablet, and native apps in a single run
+- **📲 Native App Testing**: Android (UiAutomator2) and iOS (XCUITest) via Appium
 - **🔐 Auth Support**: Handles login flows and session management
 - **📋 Form Filling**: Automatically fills checkout forms (test data only)
 - **🕵️ Stealth Mode**: Anti-bot detection with human-like behavior simulation
 - **🔄 SPA Support**: Works with modern single-page applications
 - **🛡️ Privacy-Aware**: Automatically blurs PII in screenshots
 
+### Platform Support
+
+| Platform | Type | Status | Notes |
+|---|---|---|---|
+| Web Desktop | `web_desktop` | ✅ | Playwright / Chromium |
+| Web Mobile | `web_mobile` | ✅ | Playwright with mobile UA + viewport |
+| Web Tablet | `web_tablet` | ✅ | Playwright with tablet UA + viewport |
+| Android Native | `native_android` | ✅ | Appium UiAutomator2; requires `[native]` extras |
+| iOS Native | `native_ios` | ✅ | Appium XCUITest; macOS only; requires `[native]` extras |
+| WebView wrapper | auto-detected | ✅ | Ionic/Capacitor/Cordova — switches to DOM context |
+| Flutter (semantics on) | auto-detected | ✅ | Accessibility tree available |
+| Flutter (semantics off) | auto-detected | ✅ | Screenshot-only scroll mode |
+
 ## 🚀 Installation
 
 ### PyPI Installation (Recommended)
 
 ```bash
-# Install latest version (v0.3.0 - Autonomous Crawling)
+# Install latest version
 pip install ux-journey-scraper
+
+# With native Android/iOS app testing support
+pip install 'ux-journey-scraper[native]'
 ```
 
 ### Installation from Source
@@ -41,11 +58,9 @@ cd ux-journey-scraper
 # Install in development mode
 pip install -e .
 
-# OR install with full UX guidelines support
-pip install -e ".[full]"
+# With native app testing extras
+pip install -e ".[native]"
 ```
-
-**Note:** The `[full]` option includes `ecommerce-ux-guidelines` package for detailed UX analysis. The base installation works fully for autonomous crawling and journey capture without it.
 
 ### Post-Installation
 
@@ -53,6 +68,20 @@ After installation, install Playwright browsers:
 
 ```bash
 playwright install chromium
+```
+
+For native app testing, also install Appium drivers:
+
+```bash
+# Install Appium (once)
+npm install -g appium
+
+# Install platform drivers
+appium driver install uiautomator2   # Android
+appium driver install xcuitest       # iOS (macOS only)
+
+# Start Appium server
+appium --port 4723
 ```
 
 ## 📖 Quick Start

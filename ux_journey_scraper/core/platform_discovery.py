@@ -159,12 +159,11 @@ class PlatformDiscovery:
 
     async def _discover_android_package(self, brand_name: str) -> Optional[str]:
         """
-        Discover Android package name from Google Play Store.
+        Discover Android package name.
 
         Strategy:
-        1. Search Play Store for brand name
-        2. Parse app listing for package name
-        3. Verify it's an e-commerce app
+        1. Live search via google-play-scraper (if installed)
+        2. Fall back to known_packages table
 
         Args:
             brand_name: Brand name
@@ -172,46 +171,51 @@ class PlatformDiscovery:
         Returns:
             Android package name or None
         """
+        # Known brand table (fallback cache)
+        known_packages = {
+            'amazon': 'com.amazon.mShop.android.shopping',
+            'nike': 'com.nike.omega',
+            'target': 'com.target.ui',
+            'walmart': 'com.walmart.android',
+            'temu': 'com.einnovation.temu',
+            'wish': 'com.contextlogic.wish',
+            'shein': 'com.zzkko',
+            'ebay': 'com.ebay.mobile',
+            'etsy': 'com.etsy.android',
+            'aliexpress': 'com.alibaba.aliexpresshd',
+        }
+
+        brand_slug = brand_name.lower().replace(' ', '')
+
+        # Strategy 1: google-play-scraper (live)
         try:
-            # Common package patterns for well-known brands
-            brand_slug = brand_name.lower().replace(' ', '')
-
-            # Map of known e-commerce brands to package names
-            known_packages = {
-                'amazon': 'com.amazon.mShop.android.shopping',
-                'nike': 'com.nike.omega',
-                'target': 'com.target.ui',
-                'walmart': 'com.walmart.android',
-                'temu': 'com.einnovation.temu',
-                'wish': 'com.contextlogic.wish',
-                'shein': 'com.zzkko',
-                'ebay': 'com.ebay.mobile',
-                'etsy': 'com.etsy.android',
-                'aliexpress': 'com.alibaba.aliexpresshd',
-            }
-
-            if brand_slug in known_packages:
-                package = known_packages[brand_slug]
-                logger.debug(f"Found Android package from known list: {package}")
+            from google_play_scraper import search as gps_search
+            results = gps_search(brand_name, n_hits=3, lang='en', country='us')
+            if results:
+                package = results[0]['appId']
+                logger.debug(f"Found Android package via Play Store search: {package}")
                 return package
+        except ImportError:
+            logger.debug("google-play-scraper not installed; using known_packages table")
+        except Exception as exc:
+            logger.debug(f"Play Store search failed: {exc}")
 
-            # For unknown brands, would use Play Store API
-            # Placeholder for API integration
-            logger.debug(f"Android package not in known list for {brand_name}")
-            return None
+        # Strategy 2: known table fallback
+        if brand_slug in known_packages:
+            package = known_packages[brand_slug]
+            logger.debug(f"Found Android package from known list: {package}")
+            return package
 
-        except Exception as e:
-            logger.warning(f"Error discovering Android package: {e}")
-            return None
+        logger.debug(f"Android package not found for {brand_name}")
+        return None
 
     async def _discover_ios_bundle_id(self, brand_name: str) -> Optional[str]:
         """
-        Discover iOS bundle ID from Apple App Store.
+        Discover iOS bundle ID.
 
         Strategy:
-        1. Search App Store for brand name
-        2. Parse app listing for bundle ID
-        3. Verify it's an e-commerce app
+        1. Live search via iTunes Search API (public, no key required)
+        2. Fall back to known_bundles table
 
         Args:
             brand_name: Brand name
@@ -219,37 +223,50 @@ class PlatformDiscovery:
         Returns:
             iOS bundle ID or None
         """
+        # Known brand table (fallback cache)
+        known_bundles = {
+            'amazon': 'com.amazon.Amazon',
+            'nike': 'com.nike.onenikecommerce',
+            'target': 'com.target.mobile',
+            'walmart': 'com.walmart.customer',
+            'temu': 'com.temu.app',
+            'wish': 'com.contextlogic.wish',
+            'shein': 'com.zzkko.shein',
+            'ebay': 'com.ebay.iphone',
+            'etsy': 'com.etsy.etsyforios',
+            'aliexpress': 'com.alibaba.aliexpress',
+        }
+
+        brand_slug = brand_name.lower().replace(' ', '')
+
+        # Strategy 1: iTunes Search API (live, public, no auth required)
         try:
-            # Common bundle ID patterns for well-known brands
-            brand_slug = brand_name.lower().replace(' ', '')
+            import urllib.parse
+            term = urllib.parse.quote(brand_name)
+            url = (
+                f"https://itunes.apple.com/search"
+                f"?term={term}&entity=software&country=us&limit=5"
+            )
+            async with self.session.get(url, timeout=8) as resp:
+                if resp.status == 200:
+                    data = await resp.json(content_type=None)
+                    results = data.get("results", [])
+                    if results:
+                        bundle = results[0].get("bundleId")
+                        if bundle:
+                            logger.debug(f"Found iOS bundle ID via iTunes API: {bundle}")
+                            return bundle
+        except Exception as exc:
+            logger.debug(f"iTunes Search API failed: {exc}")
 
-            # Map of known e-commerce brands to bundle IDs
-            known_bundles = {
-                'amazon': 'com.amazon.Amazon',
-                'nike': 'com.nike.onenikecommerce',
-                'target': 'com.target.mobile',
-                'walmart': 'com.walmart.customer',
-                'temu': 'com.temu.app',
-                'wish': 'com.contextlogic.wish',
-                'shein': 'com.zzkko.shein',
-                'ebay': 'com.ebay.iphone',
-                'etsy': 'com.etsy.etsyforios',
-                'aliexpress': 'com.alibaba.aliexpress',
-            }
+        # Strategy 2: known table fallback
+        if brand_slug in known_bundles:
+            bundle = known_bundles[brand_slug]
+            logger.debug(f"Found iOS bundle ID from known list: {bundle}")
+            return bundle
 
-            if brand_slug in known_bundles:
-                bundle = known_bundles[brand_slug]
-                logger.debug(f"Found iOS bundle ID from known list: {bundle}")
-                return bundle
-
-            # For unknown brands, would use App Store API
-            # Placeholder for API integration
-            logger.debug(f"iOS bundle ID not in known list for {brand_name}")
-            return None
-
-        except Exception as e:
-            logger.warning(f"Error discovering iOS bundle ID: {e}")
-            return None
+        logger.debug(f"iOS bundle ID not found for {brand_name}")
+        return None
 
     async def _verify_url_exists(self, url: str) -> bool:
         """

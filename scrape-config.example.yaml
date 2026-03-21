@@ -1,4 +1,4 @@
-# UX Journey Scraper v0.4.0 - Configuration Example
+# UX Journey Scraper v0.5.0 - Configuration Example
 # This file demonstrates all available configuration options for autonomous crawling
 
 # Target website configuration
@@ -30,6 +30,32 @@ platforms:
       height: 1180
     locale: "en-IN"
     timezone_id: "Asia/Kolkata"
+
+  # ── Native app platforms (v0.5.0) ──────────────────────────────────────────
+  # Requires: pip install 'ux-journey-scraper[native]'
+  #           appium driver install uiautomator2 xcuitest
+  #           Appium running: appium --port 4723
+  #
+  # Android emulator / physical device
+  # - type: native_android
+  #   native:
+  #     appium_server: "http://localhost:4723"
+  #     app_package: "com.amazon.mShop.android.shopping"
+  #     app_activity: ".HomeActivity"
+  #     device_name: "Pixel 7"            # physical device name (optional)
+  #     platform_version: "14.0"          # Android version (optional)
+  #     avd_name: "Pixel_7_API_34"        # start AVD emulator (optional)
+  #     apk_path: "/path/to/app.apk"      # install from file (optional)
+  #
+  # iOS Simulator / physical device (macOS only)
+  # - type: native_ios
+  #   native:
+  #     appium_server: "http://localhost:4723"
+  #     bundle_id: "com.amazon.Amazon"
+  #     device_name: "iPhone 15 Pro"      # simulator / physical device name
+  #     platform_version: "17.4"          # iOS version
+  #     simulator_udid: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"  # optional
+  #     ipa_path: "/path/to/app.ipa"      # install from file (optional)
 
 # Authentication configuration
 auth:

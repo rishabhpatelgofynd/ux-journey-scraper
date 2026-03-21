@@ -10,7 +10,7 @@ long_description = readme_file.read_text(encoding="utf-8") if readme_file.exists
 
 setup(
     name="ux-journey-scraper",
-    version="0.3.0",
+    version="0.5.0",
     author="Rishabh Patel",
     author_email="rp87704@gmail.com",
     description="Autonomous web crawler for capturing user journeys",
@@ -44,6 +44,11 @@ setup(
         "aiofiles>=23.0.0",
     ],
     extras_require={
+        "native": [
+            "Appium-Python-Client>=3.1.0",
+            "google-play-scraper>=1.2.0",
+            "imagehash>=4.3.0",
+        ],
         "dev": [
             "pytest>=7.4.0",
             "pytest-asyncio>=0.21.0",
