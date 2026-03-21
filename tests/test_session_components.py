@@ -17,7 +17,8 @@ from ux_journey_scraper.config.scrape_config import (
     SessionStrategy,
     ProxySettings,
     BrowserProvider,
-    PlatformConfig
+    PlatformConfig,
+    AuthConfig,
 )
 from ux_journey_scraper.core.cookie_jar import CookieJar
 from ux_journey_scraper.core.session_planner import SessionPlanner, VisitPlan
@@ -131,7 +132,7 @@ class TestCookieJar(unittest.TestCase):
 
     def test_update_and_get_cookies(self):
         """Test saving and retrieving cookies."""
-        jar = CookieJar(data_dir=self.data_dir)
+        jar = CookieJar(persist_path=self.data_dir / "cookies.json")
 
         test_cookies = [
             {
@@ -160,7 +161,7 @@ class TestCookieJar(unittest.TestCase):
 
     def test_has_cookies(self):
         """Test checking if cookies exist."""
-        jar = CookieJar(data_dir=self.data_dir)
+        jar = CookieJar(persist_path=self.data_dir / "cookies.json")
 
         # No cookies initially
         self.assertFalse(jar.has_cookies('example.com'))
@@ -173,7 +174,7 @@ class TestCookieJar(unittest.TestCase):
 
     def test_clear_cookies(self):
         """Test clearing cookies."""
-        jar = CookieJar(data_dir=self.data_dir)
+        jar = CookieJar(persist_path=self.data_dir / "cookies.json")
 
         jar.update('example.com', [{'name': 'test', 'value': '123', 'domain': 'example.com'}])
         self.assertTrue(jar.has_cookies('example.com'))
@@ -183,11 +184,12 @@ class TestCookieJar(unittest.TestCase):
 
     def test_persistence_to_disk(self):
         """Test cookies persist to disk."""
-        jar1 = CookieJar(data_dir=self.data_dir)
+        persist_path = self.data_dir / "cookies.json"
+        jar1 = CookieJar(persist_path=persist_path)
         jar1.update('example.com', [{'name': 'test', 'value': '123', 'domain': 'example.com'}])
 
         # Create new jar instance (simulates restart)
-        jar2 = CookieJar(data_dir=self.data_dir)
+        jar2 = CookieJar(persist_path=persist_path)
         jar2.load_from_disk()
 
         # Should have cookies from previous instance
@@ -202,28 +204,28 @@ class TestSessionPlanner(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.platform = PlatformConfig(
-            name="mobile",
+            type="web_mobile",
+            viewport={"width": 375, "height": 667},
             user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X)",
-            viewport_width=375,
-            viewport_height=667
         )
 
         self.platforms = [self.platform]
 
-    def test_plan_split_sessions(self):
-        """Test planning split sessions."""
-        planner = SessionPlanner(
-            base_url="https://example.com",
+    def _make_config(self, **overrides):
+        """Helper: build a minimal ScrapeConfig for SessionPlanner tests."""
+        defaults = dict(
+            target={"name": "Test", "base_url": "https://example.com"},
             platforms=self.platforms,
-            pages_per_session=20,
-            randomize_entry_points=True
+            auth=AuthConfig(logged_out=True, logged_in=False),
+            seed_urls=["https://example.com/p1", "https://example.com/p2"],
         )
+        defaults.update(overrides)
+        return ScrapeConfig(**defaults)
 
-        plans = planner.plan_split_sessions(
-            total_pages_needed=50,
-            auth_states=["guest"],
-            journey_goals=["browse", "search"]
-        )
+    def test_plan_split_sessions(self):
+        """Test planning generates multiple VisitPlan sessions."""
+        config = self._make_config()
+        plans = SessionPlanner().plan(config)
 
         # Should create multiple sessions
         self.assertGreater(len(plans), 1)
@@ -231,52 +233,33 @@ class TestSessionPlanner(unittest.TestCase):
         # Each plan should have proper structure
         for plan in plans:
             self.assertIsInstance(plan, VisitPlan)
-            self.assertTrue(plan.session_id.startswith('session_'))
-            self.assertIn(plan.goal, ["browse", "search"])
-            self.assertIn(plan.auth_state, ["guest"])
+            self.assertTrue(plan.session_id.startswith('visit_'))
+            self.assertIn(plan.auth_state, ["logged_out", "logged_in"])
             self.assertEqual(plan.platform, self.platform)
 
     def test_entry_point_randomization(self):
-        """Test entry points are randomized when enabled."""
-        planner = SessionPlanner(
-            base_url="https://example.com",
-            platforms=self.platforms,
-            randomize_entry_points=True
+        """Test entry points vary when randomize_entry_points=True."""
+        config = self._make_config(
+            session_strategy=SessionStrategy(randomize_entry_points=True)
         )
-
-        plans = planner.plan_split_sessions(
-            total_pages_needed=100,
-            auth_states=["guest"],
-            journey_goals=["browse"]
-        )
+        plans = SessionPlanner().plan(config)
 
         entry_urls = [plan.entry_url for plan in plans]
 
-        # Should have some variation (not all homepage)
+        # With seed URLs available and randomize=True, should see variation
         unique_entries = set(entry_urls)
         self.assertGreater(len(unique_entries), 1)
 
     def test_proxy_slot_assignment(self):
-        """Test proxy slots are assigned."""
-        planner = SessionPlanner(
-            base_url="https://example.com",
-            platforms=self.platforms,
-            proxy_pool_size=3
+        """Test proxy slots are assigned within pool bounds."""
+        config = self._make_config(
+            proxy=ProxySettings(enabled=True, pool_size=3)
         )
+        plans = SessionPlanner().plan(config)
 
-        plans = planner.plan_split_sessions(
-            total_pages_needed=50,
-            auth_states=["guest"],
-            journey_goals=["browse"]
-        )
-
-        # Check proxy slots are assigned
-        proxy_slots = [plan.proxy_slot for plan in plans]
-
-        # All should have valid slot
-        for slot in proxy_slots:
-            self.assertGreaterEqual(slot, 0)
-            self.assertLess(slot, 3)
+        for plan in plans:
+            self.assertGreaterEqual(plan.proxy_slot, 0)
+            self.assertLess(plan.proxy_slot, 3)
 
 
 class TestProxyRotator(unittest.TestCase):
@@ -341,23 +324,30 @@ class TestProxyRotator(unittest.TestCase):
 
     def test_next_rotation(self):
         """Test next() method rotates."""
-        settings = ProxySettings(
-            enabled=True,
-            provider="residential",
-            pool_size=3
-        )
+        import os
+        os.environ["PROXY_URL"] = "http://proxy.example.com:8080"
 
-        rotator = ProxyRotator(settings)
+        try:
+            settings = ProxySettings(
+                enabled=True,
+                provider="rotating",
+                endpoint_env="PROXY_URL",
+                pool_size=3,
+            )
 
-        # Call next multiple times
-        proxies = []
-        for _ in range(6):
-            proxy = rotator.next()
-            if proxy:
-                proxies.append(proxy)
+            rotator = ProxyRotator(settings)
 
-        # Should have gotten proxies
-        self.assertGreater(len(proxies), 0)
+            # Call next multiple times
+            proxies = []
+            for _ in range(6):
+                proxy = rotator.next()
+                if proxy:
+                    proxies.append(proxy)
+
+            # Should have gotten proxies
+            self.assertGreater(len(proxies), 0)
+        finally:
+            del os.environ["PROXY_URL"]
 
 
 if __name__ == '__main__':
