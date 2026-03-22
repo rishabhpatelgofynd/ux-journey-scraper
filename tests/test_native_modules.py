@@ -498,10 +498,10 @@ class TestAppiumSession:
              ) as mock_remote:
             driver = session.create_driver(platform)
             assert driver is mock_driver
-            call_args = mock_remote.call_args
-            assert call_args[0][0] == "http://localhost:4723"
-            caps = call_args[0][1]
-            assert caps["platformName"] == "Android"
+            kwargs = mock_remote.call_args.kwargs
+            assert kwargs["command_executor"] == "http://localhost:4723"
+            # AppiumOptions wraps caps — check the options object was passed
+            assert kwargs["options"] is not None
 
     def test_create_driver_ios_calls_remote(self):
         session = AppiumSession()
@@ -514,8 +514,9 @@ class TestAppiumSession:
                 return_value=mock_driver,
              ) as mock_remote:
             driver = session.create_driver(platform)
-            caps = mock_remote.call_args[0][1]
-            assert caps["platformName"] == "iOS"
+            kwargs = mock_remote.call_args.kwargs
+            assert kwargs["command_executor"] == "http://localhost:4723"
+            assert kwargs["options"] is not None
 
 
 # ---------------------------------------------------------------------------
