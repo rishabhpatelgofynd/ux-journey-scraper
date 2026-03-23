@@ -257,15 +257,48 @@ class AppProvisioner:
         return package in result.stdout
 
     def _install_apk(self, apk_path: str):
-        result = subprocess.run(
-            [self._adb, "install", "-r", "-t", apk_path],
-            capture_output=True, text=True, env=self._android_env(),
-            timeout=120,
-        )
-        if "Success" not in result.stdout and "Success" not in result.stderr:
-            raise RuntimeError(
-                f"APK install failed: {result.stderr or result.stdout}"
+        """Install APK or XAPK on the connected device."""
+        if apk_path.endswith(".xapk") or apk_path.endswith(".apkm"):
+            self._install_xapk(apk_path)
+        else:
+            result = subprocess.run(
+                [self._adb, "install", "-r", "-t", apk_path],
+                capture_output=True, text=True, env=self._android_env(),
+                timeout=180,
             )
+            if "Success" not in result.stdout and "Success" not in result.stderr:
+                raise RuntimeError(
+                    f"APK install failed: {result.stderr or result.stdout}"
+                )
+
+    def _install_xapk(self, xapk_path: str):
+        """Extract and install an XAPK/APKM bundle using adb install-multiple."""
+        import zipfile
+        import tempfile
+
+        extract_dir = Path(tempfile.mkdtemp(prefix="ux_xapk_"))
+        try:
+            click_log("Extracting XAPK bundle...")
+            with zipfile.ZipFile(xapk_path, "r") as zf:
+                zf.extractall(extract_dir)
+
+            apk_files = list(extract_dir.glob("*.apk"))
+            if not apk_files:
+                raise RuntimeError(f"No APK files found inside {xapk_path}")
+
+            click_log(f"Installing {len(apk_files)} APK split(s)...")
+            cmd = [self._adb, "install-multiple", "-r", "-t"] + [str(f) for f in apk_files]
+            result = subprocess.run(
+                cmd, capture_output=True, text=True,
+                env=self._android_env(), timeout=300,
+            )
+            if "Success" not in result.stdout and "Success" not in result.stderr:
+                raise RuntimeError(
+                    f"XAPK install failed: {result.stderr or result.stdout}"
+                )
+        finally:
+            import shutil as _shutil
+            _shutil.rmtree(extract_dir, ignore_errors=True)
 
     def _detect_main_activity(self, package: str) -> Optional[str]:
         """Auto-detect the main launcher activity."""
@@ -285,10 +318,12 @@ class AppProvisioner:
 
     async def _download_apk(self, package: str, brand: str) -> str:
         """Try to download APK automatically, fall back to instructions."""
-        cached = APK_CACHE_DIR / f"{package}.apk"
-        if cached.exists():
-            click_log(f"Using cached APK: {cached}")
-            return str(cached)
+        # Check cache for any format
+        for ext in (".apk", ".xapk", ".apkm"):
+            cached = APK_CACHE_DIR / f"{package}{ext}"
+            if cached.exists():
+                click_log(f"Using cached APK: {cached}")
+                return str(cached)
 
         # Try apkeep (most reliable CLI downloader)
         if shutil.which("apkeep"):
@@ -310,22 +345,24 @@ class AppProvisioner:
         )
 
     async def _download_via_apkeep(self, package: str, output_path: str) -> str:
-        """Download APK using apkeep CLI."""
-        output_dir = str(APK_CACHE_DIR)
+        """Download APK/XAPK using apkeep CLI."""
         proc = await asyncio.create_subprocess_exec(
-            "apkeep", "-a", package, output_dir,
+            "apkeep", "-a", package, "-d", "apk-pure", str(APK_CACHE_DIR),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
         if proc.returncode != 0:
             raise RuntimeError(stderr.decode())
 
-        # apkeep saves as {package}.apk in the output dir
-        downloaded = APK_CACHE_DIR / f"{package}.apk"
-        if downloaded.exists():
-            return str(downloaded)
-        raise RuntimeError(f"apkeep finished but file not found at {downloaded}")
+        # apkeep saves as {package}.apk or {package}.xapk
+        for ext in (".apk", ".xapk", ".apkm"):
+            candidate = APK_CACHE_DIR / f"{package}{ext}"
+            if candidate.exists():
+                return str(candidate)
+        raise RuntimeError(
+            f"apkeep finished but no APK found in {APK_CACHE_DIR}"
+        )
 
     # ------------------------------------------------------------------
     # Discovery
