@@ -256,8 +256,24 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
         click.echo("No platforms configured. Exiting.")
         return
 
+    # Use Browserbase for web platforms if credentials are available,
+    # otherwise fall back to local Patchright stealth browser
+    import os as _os
+    has_browserbase = bool(
+        _os.environ.get("BROWSERBASE_API_KEY") and
+        _os.environ.get("BROWSERBASE_PROJECT_ID")
+    )
+    browser_provider = BrowserProvider(
+        type="browserbase" if has_browserbase else "local",
+        use_proxy=False,   # proxy requires paid plan; cloud browser itself is free
+        use_stealth=True,
+    )
+    if has_browserbase:
+        click.echo("  Using Browserbase cloud browser (residential IP)")
+    else:
+        click.echo("  Using local Patchright stealth browser")
+
     # Build a full ScrapeConfig using ALL ux-journey-scraper features
-    # (stealth mode, headless, session strategy, etc.)
     scrape_config = ScrapeConfig(
         target={"name": brand, "base_url": base_url},
         platforms=platform_configs,
@@ -269,7 +285,7 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
             headless=True,
             timeout_per_page_ms=30000,
         ),
-        browser=BrowserProvider(type="local"),
+        browser=browser_provider,
     )
 
     # Run each platform through the same _run_platform() used by 'crawl'
