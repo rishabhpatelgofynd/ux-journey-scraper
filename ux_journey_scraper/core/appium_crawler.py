@@ -126,7 +126,17 @@ class AppiumCrawler:
                 return
 
             logger.info(f"Switching to WebView context: {webview_ctx}")
-            driver.switch_to.context(webview_ctx)
+            try:
+                driver.switch_to.context(webview_ctx)
+            except Exception as e:
+                if "Chromedriver" in str(e) or "chromedriver" in str(e):
+                    logger.warning(
+                        f"ChromeDriver not available for WebView — falling back to native crawl. "
+                        f"Add 'chromedriverAutodownload: true' capability or install ChromeDriver."
+                    )
+                    await self._crawl_native(driver, journey)
+                    return
+                raise
 
             max_pages = self.config.crawler.max_pages
             pages = 0

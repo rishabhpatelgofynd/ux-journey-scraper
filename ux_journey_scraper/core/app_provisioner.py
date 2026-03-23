@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Well-known brand → package/bundle mapping (instant, no API call)
 KNOWN_ANDROID = {
-    "amazon":     ("com.amazon.mShop.android.shopping", ".HomeActivity"),
+    "amazon":     ("com.amazon.mShop.android.shopping", "com.amazon.mShop.home.HomeActivity"),
     "flipkart":   ("com.flipkart.android",              ".MainActivity"),
     "myntra":     ("com.myntra.android",                ".MainActivity"),
     "ajio":       ("com.ril.ajio",                      ".MainActivity"),
@@ -114,6 +114,9 @@ class AppProvisioner:
         await self._ensure_android_device()
         click_log("Device ready.")
 
+        # 2b. Ensure Appium is running
+        await self._ensure_appium(appium_server)
+
         # 3. Check if already installed
         if self._is_installed_android(package):
             click_log(f"{brand.title()} already installed.")
@@ -126,11 +129,11 @@ class AppProvisioner:
             self._install_apk(apk_path)
             click_log(f"{brand.title()} installed.")
 
-        # 6. Auto-detect main activity if not known
-        if activity == ".MainActivity":
-            detected = self._detect_main_activity(package)
-            if detected:
-                activity = detected
+        # 6. Always auto-detect real activity from device (overrides table)
+        detected = self._detect_main_activity(package)
+        if detected:
+            activity = detected
+            logger.info(f"Using detected activity: {activity}")
 
         return NativeAppConfig(
             appium_server=appium_server,
@@ -167,6 +170,45 @@ class AppProvisioner:
     # ------------------------------------------------------------------
     # Device management
     # ------------------------------------------------------------------
+
+    async def _ensure_appium(self, server_url: str):
+        """Start Appium if not already running."""
+        import requests as _req
+        status_url = f"{server_url.rstrip('/')}/status"
+        try:
+            _req.get(status_url, timeout=3)
+            click_log("Appium already running.")
+            return
+        except Exception:
+            pass
+
+        appium_bin = shutil.which("appium")
+        if not appium_bin:
+            raise RuntimeError(
+                "Appium not found. Install with: npm install -g appium"
+            )
+
+        port = server_url.split(":")[-1].rstrip("/")
+        click_log(f"Starting Appium on port {port}...")
+        env = self._android_env()
+        subprocess.Popen(
+            [appium_bin, "--port", port],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        # Wait up to 15s for Appium to be ready
+        for _ in range(15):
+            await asyncio.sleep(1)
+            try:
+                _req.get(status_url, timeout=2)
+                click_log("Appium started.")
+                return
+            except Exception:
+                pass
+
+        raise RuntimeError(f"Appium did not start within 15 seconds at {server_url}")
 
     async def _ensure_android_device(self):
         """Start the first available AVD if no device is connected."""

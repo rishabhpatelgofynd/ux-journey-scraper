@@ -73,6 +73,12 @@ class AppiumSession:
             "platformName": "Android",
             "automationName": "UiAutomator2",
             "noReset": True,
+            "uiautomator2ServerLaunchTimeout": 60000,
+            "uiautomator2ServerInstallTimeout": 60000,
+            "adbExecTimeout": 60000,
+            "androidDeviceReadyTimeout": 60,
+            "autoGrantPermissions": True,
+            "chromedriverAutodownload": True,
         }
         if n.app_package:      caps["appPackage"] = n.app_package
         if n.app_activity:     caps["appActivity"] = n.app_activity
