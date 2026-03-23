@@ -18,6 +18,41 @@ except ImportError:
     _APPIUM_AVAILABLE = False
 
 
+def _run_platform(scrape_config, platform, platform_dir):
+    """Shared crawl execution used by both 'crawl' and 'scrape' commands."""
+    from pathlib import Path as _Path
+    platform_dir = _Path(platform_dir)
+
+    if platform.is_native:
+        if not _APPIUM_AVAILABLE:
+            click.echo(f"  Skipping {platform.type}: Appium not installed.")
+            click.echo("  Install: pip install 'ux-journey-scraper[native]'")
+            return 0
+        click.echo(f"Platform: {platform.type} (native app via Appium)")
+        crawler = AppiumCrawler(
+            config=scrape_config,
+            output_dir=str(platform_dir),
+            platform=platform,
+        )
+    else:
+        viewport = platform.viewport or {}
+        w = viewport.get("width", "?")
+        h = viewport.get("height", "?")
+        click.echo(f"Platform: {platform.type} ({w}x{h})")
+        crawler = AutonomousCrawler(
+            config=scrape_config,
+            output_dir=str(platform_dir),
+            platform=platform,
+        )
+
+    journey = asyncio.run(crawler.crawl())
+    output_file = platform_dir / "journey.json"
+    journey.save(str(output_file))
+    pages = crawler.get_stats()["pages_captured"]
+    click.echo(f"  {platform.type}: {pages} pages -> {output_file}")
+    return pages
+
+
 @click.group()
 @click.version_option(version="0.5.0")
 def cli():
@@ -45,46 +80,12 @@ def crawl(config, output_dir):
         click.echo(f"   Seed URLs: {len(scrape_config.seed_urls)}")
         click.echo(f"   Max pages: {scrape_config.crawler.max_pages}")
 
-        # Run crawl for each platform
+        # Run crawl for each platform using shared _run_platform()
         click.echo(f"\nStarting multi-platform crawl...\n")
         total_pages = 0
         for platform in scrape_config.platforms:
             platform_dir = Path(output_dir) / platform.type
-
-            if platform.is_native:
-                # ---- Native app crawl via Appium ----
-                if not _APPIUM_AVAILABLE:
-                    click.echo(f"  Skipping {platform.type}: Appium not installed.")
-                    click.echo("    Install: pip install 'ux-journey-scraper[native]'")
-                    click.echo("    Then run: appium driver install uiautomator2 xcuitest")
-                    continue
-                click.echo(f"Platform: {platform.type} (native app via Appium)")
-                crawler = AppiumCrawler(
-                    config=scrape_config,
-                    output_dir=str(platform_dir),
-                    platform=platform,
-                )
-            else:
-                # ---- Web crawl via Playwright ----
-                viewport = platform.viewport or {}
-                w = viewport.get("width", "?")
-                h = viewport.get("height", "?")
-                click.echo(f"Platform: {platform.type} ({w}x{h})")
-                crawler = AutonomousCrawler(
-                    config=scrape_config,
-                    output_dir=str(platform_dir),
-                    platform=platform,
-                )
-
-            journey = asyncio.run(crawler.crawl())
-
-            output_file = platform_dir / "journey.json"
-            journey.save(str(output_file))
-
-            stats = crawler.get_stats()
-            pages = stats['pages_captured']
-            total_pages += pages
-            click.echo(f"  {platform.type}: {pages} pages -> {output_file}")
+            total_pages += _run_platform(scrape_config, platform, platform_dir)
 
         click.echo(f"\n{'='*60}")
         click.echo(f"All platforms complete!")
@@ -191,88 +192,76 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
     click.echo(f"Platforms: {platforms}")
     click.echo(f"Output:    {output_dir}\n")
 
+    from ux_journey_scraper.config.scrape_config import (
+        PlatformConfig, ScrapeConfig, AuthConfig, CrawlerConfig,
+        BrowserProvider, NativeAppConfig,
+    )
+
+    VIEWPORTS = {
+        "web_desktop": {"width": 1920, "height": 1080},
+        "web_mobile":  {"width": 390,  "height": 844},
+        "web_tablet":  {"width": 820,  "height": 1180},
+    }
+    base_url = f"https://www.{brand.lower()}.in"
     platform_list = [p.strip() for p in platforms.split(",")]
     total_pages = 0
 
+    # Build platform list — provision native apps first
+    platform_configs = []
     for platform_type in platform_list:
-        platform_dir = Path(output_dir) / platform_type
         click.echo(f"{'─'*50}")
-        click.echo(f"Platform: {platform_type}")
-
+        click.echo(f"Setting up: {platform_type}")
         try:
             if platform_type in ("native_android", "native_ios"):
                 if not _APPIUM_AVAILABLE:
-                    click.echo(f"  Skipping: Appium not installed.")
-                    click.echo("  Install: pip install 'ux-journey-scraper[native]'")
+                    click.echo("  Skipping: Appium not installed.")
                     continue
-
-                # Auto-provision: discover + boot + install + configure
                 provisioner = AppProvisioner()
-                native_config = asyncio.run(
+                native_cfg = asyncio.run(
                     provisioner.provision(brand, platform_type, appium_server)
                 )
-
-                from ux_journey_scraper.config.scrape_config import (
-                    PlatformConfig, ScrapeConfig, AuthConfig, CrawlerConfig
+                platform_configs.append(
+                    PlatformConfig(type=platform_type, native=native_cfg)
                 )
-                platform = PlatformConfig(type=platform_type, native=native_config)
-                scrape_config = ScrapeConfig(
-                    target={"name": brand, "base_url": f"https://www.{brand.lower()}.in"},
-                    platforms=[platform],
-                    auth=AuthConfig(logged_out=True, logged_in=False),
-                    seed_urls=[f"https://www.{brand.lower()}.in"],
-                    crawler=CrawlerConfig(max_pages=max_pages),
-                )
-                crawler = AppiumCrawler(
-                    config=scrape_config,
-                    output_dir=str(platform_dir),
-                    platform=platform,
-                )
-
-            elif platform_type in ("web_desktop", "web_mobile", "web_tablet"):
-                from ux_journey_scraper.config.scrape_config import (
-                    PlatformConfig, ScrapeConfig, AuthConfig, CrawlerConfig
-                )
-                viewports = {
-                    "web_desktop": {"width": 1920, "height": 1080},
-                    "web_mobile":  {"width": 390,  "height": 844},
-                    "web_tablet":  {"width": 820,  "height": 1180},
-                }
-                base_url = f"https://www.{brand.lower()}.in"
-                platform = PlatformConfig(
-                    type=platform_type,
-                    viewport=viewports[platform_type],
-                )
-                scrape_config = ScrapeConfig(
-                    target={"name": brand, "base_url": base_url},
-                    platforms=[platform],
-                    auth=AuthConfig(logged_out=True, logged_in=False),
-                    seed_urls=[base_url],
-                    crawler=CrawlerConfig(
-                        max_pages=max_pages,
-                        respect_robots=False,
-                    ),
-                )
-                crawler = AutonomousCrawler(
-                    config=scrape_config,
-                    output_dir=str(platform_dir),
-                    platform=platform,
+            elif platform_type in VIEWPORTS:
+                platform_configs.append(
+                    PlatformConfig(type=platform_type, viewport=VIEWPORTS[platform_type])
                 )
             else:
                 click.echo(f"  Unknown platform type: {platform_type}")
-                continue
+        except Exception as e:
+            click.echo(f"  Provisioning error: {e}")
+            import traceback; traceback.print_exc()
 
-            journey = asyncio.run(crawler.crawl())
-            output_file = platform_dir / "journey.json"
-            journey.save(str(output_file))
-            pages = crawler.get_stats()["pages_captured"]
-            total_pages += pages
-            click.echo(f"  Done: {pages} pages -> {output_file}")
+    if not platform_configs:
+        click.echo("No platforms configured. Exiting.")
+        return
 
+    # Build a full ScrapeConfig using ALL ux-journey-scraper features
+    # (stealth mode, headless, session strategy, etc.)
+    scrape_config = ScrapeConfig(
+        target={"name": brand, "base_url": base_url},
+        platforms=platform_configs,
+        auth=AuthConfig(logged_out=True, logged_in=False),
+        seed_urls=[base_url],
+        crawler=CrawlerConfig(
+            max_pages=max_pages,
+            respect_robots=False,
+            headless=True,
+        ),
+        browser=BrowserProvider(type="local"),
+    )
+
+    # Run each platform through the same _run_platform() used by 'crawl'
+    click.echo(f"\nStarting crawl...\n")
+    for platform in scrape_config.platforms:
+        platform_dir = Path(output_dir) / platform.type
+        click.echo(f"{'─'*50}")
+        try:
+            total_pages += _run_platform(scrape_config, platform, platform_dir)
         except Exception as e:
             click.echo(f"  Error: {e}")
-            import traceback
-            traceback.print_exc()
+            import traceback; traceback.print_exc()
 
     click.echo(f"\n{'='*60}")
     click.echo(f"All platforms complete! Total pages: {total_pages}")
