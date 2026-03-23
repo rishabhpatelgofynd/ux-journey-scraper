@@ -1,13 +1,18 @@
 """
-UX Journey Scraper - Record and analyze user journeys with UX guidelines validation.
+UX Journey Scraper - Autonomous web crawler for capturing user journeys.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.5.0"
 
-from ux_journey_scraper.analyzers.ux_analyzer import UXAnalyzer
 from ux_journey_scraper.core.journey_recorder import JourneyRecorder
+from ux_journey_scraper.core.autonomous_crawler import AutonomousCrawler
+from ux_journey_scraper.config.scrape_config import ScrapeConfig
+from ux_journey_scraper.journey_loader import JourneyLoader, JourneyStep
 
 __all__ = [
     "JourneyRecorder",
-    "UXAnalyzer",
+    "AutonomousCrawler",
+    "ScrapeConfig",
+    "JourneyLoader",
+    "JourneyStep",
 ]

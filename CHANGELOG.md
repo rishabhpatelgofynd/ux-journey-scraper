@@ -7,6 +7,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-21
+
+### Added - Native & Wrapper App Testing
+
+**Major Feature**: Native Android and iOS app testing via Appium. All four mobile
+app architecture types are now supported: WebView wrappers (Ionic/Capacitor/Cordova),
+React Native, Flutter, and pure native (Swift/Kotlin).
+
+#### New Platform Types
+- **`native_android`**: Android app testing via UiAutomator2
+- **`native_ios`**: iOS app testing via XCUITest (macOS only)
+
+#### New Core Modules
+- **`core/appium_session.py`**: Builds Appium capabilities for Android (UiAutomator2)
+  and iOS (XCUITest); validates server reachability before crawl starts
+- **`core/native_element_detector.py`**: Traverses Appium accessibility tree and
+  scores elements using the same `PRIORITY_KEYWORDS` table as `NavigationQueue`
+- **`core/gesture_engine.py`**: Touch primitives — tap, scroll, swipe-back (iOS edge
+  gesture + Android BACK key), pull-to-refresh, long press, keyboard dismiss
+- **`core/mobile_state_registry.py`**: Perceptual-hash (pHash) based screen
+  deduplication; falls back to MD5 when `imagehash` is not installed
+- **`core/appium_crawler.py`**: Main crawler — same public interface as
+  `AutonomousCrawler` (`crawl() → Journey`, `get_stats() → Dict`);
+  handles WebView, native, and Flutter (semantics-disabled) modes
+
+#### Config Changes (`config/scrape_config.py`)
+- New `NativeAppConfig` dataclass (Appium server, app package/bundle ID, device name,
+  platform version, AVD name, APK/IPA path, simulator UDID)
+- `PlatformConfig.viewport` is now `Optional` — not required for native platforms
+- `PlatformConfig.native: Optional[NativeAppConfig]` — required for native platforms
+- `PlatformConfig.is_native` and `PlatformConfig.is_web` boolean properties
+- `ScrapeConfig.load()` parses the `native:` YAML block into `NativeAppConfig`
+
+#### CLI Changes (`cli/main.py`)
+- Native platforms route to `AppiumCrawler`; web platforms to `AutonomousCrawler`
+- Graceful skip with install instructions when Appium package is not installed
+- Version bumped to `0.5.0`
+
+#### Platform Discovery (`core/platform_discovery.py`)
+- `_discover_ios_bundle_id()`: Live iTunes Search API (public, no key); table fallback
+- `_discover_android_package()`: Live `google-play-scraper` search; table fallback
+
+#### Architecture Routing
+- WebView (Ionic/Capacitor): switches to WEBVIEW context → DOM automation
+- React Native / Swift / Kotlin: native accessibility tree traversal
+- Flutter (semantics disabled): screenshot-only scroll mode with log warning
+- OS permission dialogs auto-dismissed (camera, location, notifications)
+
+### Added - Dependencies (optional group `[native]`)
+- `Appium-Python-Client>=3.1.0`
+- `google-play-scraper>=1.2.0`
+- `imagehash>=4.3.0`
+
+Install with: `pip install 'ux-journey-scraper[native]'`
+
+### Output Structure
+```
+journey_output/
+  web_desktop/journey.json + screenshots/    ← Phase 1
+  web_mobile/journey.json  + screenshots/    ← Phase 1
+  native_android/journey.json + screenshots/ ← Phase 2 (new)
+  native_ios/journey.json  + screenshots/    ← Phase 2 (new, macOS only)
+```
+
+## [0.4.0] - 2026-03-21
+
+### Added - Multi-Platform Web Crawling
+
+**Major Feature**: `ux-journey crawl` now loops over all configured platforms in a single run, producing per-platform output directories.
+
+#### Multi-Platform Crawling
+- **All platforms in one run**: Configure `web_desktop`, `web_mobile`, and `web_tablet` in YAML; the crawler runs each sequentially and saves results to separate subdirs (`journey_output/web_desktop/`, `journey_output/web_mobile/`, `journey_output/web_tablet/`)
+- **Tablet support**: `web_tablet` (iPad Air 820×1180) is now a first-class platform alongside desktop and mobile
+- **Per-platform output**: Each platform gets its own `journey.json` and `screenshots/` folder
+
+#### Bug Fixes
+- **Tablet UA string**: Fixed truncated iPad user-agent (was missing `(KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1` suffix)
+- **Tablet `device_scale_factor`**: Fixed — tablet now correctly gets `device_scale_factor=2.0` (same as mobile); was incorrectly using `1.0`
+
+### Changed
+- **Version**: Bumped to 0.4.0
+- **CLI**: `crawl` command header now shows `v0.4.0`; output summary shows per-platform page counts
+
+### Added - Dependencies
+- `aiohttp>=3.9.0`: Required by `platform_discovery.py` (was imported but missing from `pyproject.toml`)
+
+### Roadmap - Phase 2 (v0.5.0)
+Native iOS/Android app testing via Appium is documented as the next milestone. Stubs (`platform_discovery.py`, `app_architecture_detector.py`) are preserved for Phase 2 integration.
+
 ## [0.2.0] - 2026-03-19
 
 ### Added - Autonomous Crawling

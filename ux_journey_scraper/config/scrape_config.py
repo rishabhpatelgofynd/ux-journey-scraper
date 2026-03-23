@@ -10,27 +10,74 @@ from typing import Any, Dict, List, Optional
 
 
 @dataclass
-class PlatformConfig:
-    """Configuration for a specific platform (desktop, mobile, tablet)."""
+class NativeAppConfig:
+    """Configuration for native Android/iOS app testing via Appium."""
 
-    type: str  # "web_desktop", "web_mobile", "web_tablet"
-    viewport: Dict[str, int]  # {"width": 1920, "height": 1080}
+    appium_server: str = "http://localhost:4723"
+    app_package: Optional[str] = None      # Android: "com.amazon.mShop.android.shopping"
+    app_activity: Optional[str] = None     # Android: ".HomeActivity"
+    bundle_id: Optional[str] = None        # iOS: "com.amazon.Amazon"
+    apk_path: Optional[str] = None         # Install from local APK
+    ipa_path: Optional[str] = None         # Install from local IPA
+    avd_name: Optional[str] = None         # Android AVD emulator name
+    simulator_udid: Optional[str] = None   # iOS Simulator UDID
+    device_name: Optional[str] = None      # "Pixel 7" / "iPhone 15 Pro"
+    platform_version: Optional[str] = None # "14.0" / "17.4"
+    safari_initial_url: Optional[str] = None  # iOS Safari: open this URL on launch
+    extra_caps: Optional[Dict[str, Any]] = None  # Any additional Appium capabilities
+
+
+@dataclass
+class PlatformConfig:
+    """Configuration for a specific platform (desktop, mobile, tablet, or native app)."""
+
+    type: str  # "web_desktop", "web_mobile", "web_tablet", "native_android", "native_ios"
+    viewport: Optional[Dict[str, int]] = None  # {"width": 1920, "height": 1080} — web only
     user_agent: Optional[str] = None
     locale: str = "en-IN"
     timezone_id: str = "Asia/Kolkata"
+    native: Optional[NativeAppConfig] = None  # Required for native_android / native_ios
+
+    @property
+    def is_native(self) -> bool:
+        """Return True for native_android and native_ios platform types."""
+        return self.type in ("native_android", "native_ios")
+
+    @property
+    def is_web(self) -> bool:
+        """Return True for web_desktop, web_mobile, and web_tablet platform types."""
+        return self.type in ("web_desktop", "web_mobile", "web_tablet")
 
     def __post_init__(self):
         """Validate platform configuration."""
-        valid_types = ["web_desktop", "web_mobile", "web_tablet"]
+        valid_types = ["web_desktop", "web_mobile", "web_tablet", "native_android", "native_ios"]
         if self.type not in valid_types:
             raise ValueError(f"Invalid platform type: {self.type}. Must be one of {valid_types}")
 
-        required_keys = {"width", "height"}
-        if not required_keys.issubset(self.viewport.keys()):
-            raise ValueError(f"Viewport must contain {required_keys}")
+        if self.is_web:
+            if self.viewport is None:
+                raise ValueError(f"Platform type '{self.type}' requires a viewport configuration")
+            required_keys = {"width", "height"}
+            if not required_keys.issubset(self.viewport.keys()):
+                raise ValueError(f"Viewport must contain {required_keys}")
+            if self.viewport["width"] <= 0 or self.viewport["height"] <= 0:
+                raise ValueError("Viewport dimensions must be positive")
 
-        if self.viewport["width"] <= 0 or self.viewport["height"] <= 0:
-            raise ValueError("Viewport dimensions must be positive")
+        if self.is_native:
+            if self.native is None:
+                raise ValueError(
+                    f"Platform type '{self.type}' requires a 'native' configuration block"
+                )
+            has_android_id = self.native.app_package or self.native.apk_path
+            has_ios_id = self.native.bundle_id or self.native.ipa_path
+            if self.type == "native_android" and not has_android_id:
+                raise ValueError(
+                    "native_android requires 'app_package' or 'apk_path' in the native config"
+                )
+            if self.type == "native_ios" and not has_ios_id:
+                raise ValueError(
+                    "native_ios requires 'bundle_id' or 'ipa_path' in the native config"
+                )
 
 
 @dataclass
@@ -108,6 +155,120 @@ class FormFillConfig:
 
 
 @dataclass
+class SessionStrategy:
+    """Controls how the crawl is split across multiple browser sessions."""
+
+    mode: str = "split"
+    # "split" = multiple visit sessions with cooldowns (default, recommended)
+    # "continuous" = original behavior, all pages in one session (for weak-defense sites)
+
+    pages_per_session: int = 20            # Max pages per visit session
+    min_cooldown_sec: int = 120            # 2 min minimum between sessions
+    max_cooldown_sec: int = 600            # 10 min maximum between sessions
+    persist_cookies: bool = True           # Reuse cookies across sessions (returning visitor)
+    randomize_entry_points: bool = True    # Don't always start from homepage
+    rotate_ip_per_session: bool = False    # Rotate proxy IP every session
+    rotate_ip_per_n_sessions: int = 3      # Rotate every N sessions (if above is False)
+
+    def __post_init__(self):
+        """Validate session strategy configuration."""
+        valid_modes = ["split", "continuous"]
+        if self.mode not in valid_modes:
+            raise ValueError(f"Invalid session mode: {self.mode}. Must be one of {valid_modes}")
+
+        if self.pages_per_session < 1:
+            raise ValueError("pages_per_session must be at least 1")
+        if self.min_cooldown_sec < 0:
+            raise ValueError("min_cooldown_sec must be non-negative")
+        if self.max_cooldown_sec < self.min_cooldown_sec:
+            raise ValueError("max_cooldown_sec must be >= min_cooldown_sec")
+        if self.rotate_ip_per_n_sessions < 1:
+            raise ValueError("rotate_ip_per_n_sessions must be at least 1")
+
+
+@dataclass
+class ProxySettings:
+    """Proxy configuration for IP rotation and anonymization."""
+
+    enabled: bool = False
+    provider: str = "residential"          # residential | datacenter | rotating
+    endpoint_env: Optional[str] = None     # Env var holding proxy URL
+    rotate_per: str = "session"            # session | request | domain
+    pool_size: int = 5                     # Number of IPs in rotation pool
+    geo: Optional[str] = None              # Geo target: "IN", "US", etc.
+    domains: List[str] = field(default_factory=list)  # Domain filter
+
+    def __post_init__(self):
+        """Validate proxy configuration."""
+        valid_providers = ["residential", "datacenter", "rotating"]
+        if self.provider not in valid_providers:
+            raise ValueError(f"Invalid provider: {self.provider}. Must be one of {valid_providers}")
+
+        valid_rotate_per = ["session", "request", "domain"]
+        if self.rotate_per not in valid_rotate_per:
+            raise ValueError(f"Invalid rotate_per: {self.rotate_per}. Must be one of {valid_rotate_per}")
+
+        if self.pool_size < 1:
+            raise ValueError("pool_size must be at least 1")
+
+
+@dataclass
+class UXValidationConfig:
+    """UX validation configuration using Baymard guidelines."""
+
+    enabled: bool = False  # Enable UX validation
+    guidelines_path: Optional[str] = None  # Path to processed_guidelines.json
+    auto_detect_page_type: bool = True  # Automatically detect page types
+    fail_on_violations: bool = False  # Fail crawl if critical violations found
+    min_compliance_score: float = 0.0  # Minimum compliance score (0-100)
+    severity_threshold: str = "medium"  # Report violations at this level or higher: low, medium, high
+    validate_on_capture: bool = True  # Validate pages as they're captured
+    save_validation_report: bool = True  # Save detailed validation report
+
+    def __post_init__(self):
+        """Validate UX validation configuration."""
+        if self.enabled and not self.guidelines_path:
+            raise ValueError(
+                "UX validation enabled but guidelines_path not specified. "
+                "Set guidelines_path to the processed_guidelines.json file."
+            )
+
+        if self.min_compliance_score < 0 or self.min_compliance_score > 100:
+            raise ValueError("min_compliance_score must be between 0 and 100")
+
+        valid_severities = ["low", "medium", "high"]
+        if self.severity_threshold not in valid_severities:
+            raise ValueError(
+                f"severity_threshold must be one of {valid_severities}"
+            )
+
+
+@dataclass
+class BrowserProvider:
+    """Browser backend configuration (local Patchright or cloud Browserbase)."""
+
+    type: str = "local"
+    # "local" = Patchright on local machine (default, free)
+    # "browserbase" = Browserbase cloud browser (paid, managed anti-detection)
+
+    # Browserbase-specific settings (ignored when type = "local")
+    api_key_env: str = "BROWSERBASE_API_KEY"        # Env var for API key
+    project_id_env: str = "BROWSERBASE_PROJECT_ID"  # Env var for project ID
+    use_proxy: bool = True                           # Use Browserbase's proxy network
+    proxy_geo: Optional[str] = None                  # Geo target: "IN", "US", etc.
+    use_stealth: bool = True                         # Enable Browserbase stealth mode
+    solve_captchas: bool = True                      # Enable managed CAPTCHA solving
+    keep_alive: bool = False                         # Keep session alive after disconnect
+    context_id: Optional[str] = None                 # Browserbase Context ID for cookie persistence
+
+    def __post_init__(self):
+        """Validate browser provider configuration."""
+        valid_types = ["local", "browserbase"]
+        if self.type not in valid_types:
+            raise ValueError(f"Invalid browser type: {self.type}. Must be one of {valid_types}")
+
+
+@dataclass
 class CrawlerConfig:
     """Crawler behavior configuration."""
 
@@ -119,6 +280,7 @@ class CrawlerConfig:
     max_retries: int = 2  # Retries on page load failure
     respect_robots: bool = True  # Check robots.txt
     follow_external_links: bool = False  # Stay within base_url domain
+    headless: bool = True  # Run browser in headless mode
 
     def __post_init__(self):
         """Validate crawler configuration."""
@@ -142,6 +304,16 @@ class ScrapeConfig:
     seed_urls: List[str]
     form_fill: FormFillConfig = field(default_factory=FormFillConfig)
     crawler: CrawlerConfig = field(default_factory=CrawlerConfig)
+    session_strategy: SessionStrategy = field(default_factory=SessionStrategy)
+    proxy: ProxySettings = field(default_factory=ProxySettings)
+    browser: BrowserProvider = field(default_factory=BrowserProvider)
+    ux_validation: UXValidationConfig = field(default_factory=UXValidationConfig)
+
+    # Runtime fields (not from YAML)
+    run_id: Optional[str] = None
+    output_dir: str = "context"
+    base_url: Optional[str] = None  # Derived from target
+    post_order: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         """Validate main configuration."""
@@ -152,6 +324,10 @@ class ScrapeConfig:
 
         if not self.target["base_url"].startswith(("http://", "https://")):
             raise ValueError("base_url must start with http:// or https://")
+
+        # Set base_url from target
+        if self.base_url is None:
+            self.base_url = self.target["base_url"]
 
         # Validate platforms
         if not self.platforms:
@@ -164,6 +340,10 @@ class ScrapeConfig:
         for url in self.seed_urls:
             if not url.startswith(("http://", "https://")):
                 raise ValueError(f"Invalid seed URL: {url}")
+
+        # Initialize post_order if not set
+        if self.post_order is None:
+            self.post_order = {"seeds": []}
 
     @classmethod
     def load(cls, config_path: str) -> "ScrapeConfig":
@@ -196,16 +376,20 @@ class ScrapeConfig:
 
         # Parse platforms
         platforms_data = data.get("platforms", [])
-        platforms = [
-            PlatformConfig(
-                type=p.get("type"),
-                viewport=p.get("viewport", {}),
-                user_agent=p.get("user_agent"),
-                locale=p.get("locale", "en-IN"),
-                timezone_id=p.get("timezone_id", "Asia/Kolkata"),
+        platforms = []
+        for p in platforms_data:
+            native_data = p.get("native")
+            native_config = NativeAppConfig(**native_data) if native_data else None
+            platforms.append(
+                PlatformConfig(
+                    type=p.get("type"),
+                    viewport=p.get("viewport") or None,
+                    user_agent=p.get("user_agent"),
+                    locale=p.get("locale", "en-IN"),
+                    timezone_id=p.get("timezone_id", "Asia/Kolkata"),
+                    native=native_config,
+                )
             )
-            for p in platforms_data
-        ]
 
         # Parse auth
         auth_data = data.get("auth", {})
@@ -229,6 +413,23 @@ class ScrapeConfig:
         crawler_data = data.get("crawler", {})
         crawler = CrawlerConfig(**crawler_data) if crawler_data else CrawlerConfig()
 
+        # Parse session strategy
+        session_data = data.get("session_strategy", {})
+        session_strategy = SessionStrategy(**session_data) if session_data else SessionStrategy()
+
+        # Parse proxy settings
+        proxy_data = data.get("proxy", {})
+        proxy = ProxySettings(**proxy_data) if proxy_data else ProxySettings()
+
+        # Parse browser provider
+        browser_data = data.get("browser", {})
+        browser = BrowserProvider(**browser_data) if browser_data else BrowserProvider()
+
+        # Parse runtime options
+        run_id = data.get("run_id")
+        output_dir = data.get("output_dir", "context")
+        post_order = data.get("post_order", {"seeds": []})
+
         return cls(
             target=target,
             platforms=platforms,
@@ -236,6 +437,12 @@ class ScrapeConfig:
             seed_urls=seed_urls,
             form_fill=form_fill,
             crawler=crawler,
+            session_strategy=session_strategy,
+            proxy=proxy,
+            browser=browser,
+            run_id=run_id,
+            output_dir=output_dir,
+            post_order=post_order,
         )
 
     def save(self, config_path: str) -> None:
@@ -250,10 +457,22 @@ class ScrapeConfig:
             "platforms": [
                 {
                     "type": p.type,
-                    "viewport": p.viewport,
+                    **({"viewport": p.viewport} if p.viewport else {}),
                     "user_agent": p.user_agent,
                     "locale": p.locale,
                     "timezone_id": p.timezone_id,
+                    **({"native": {
+                        "appium_server": p.native.appium_server,
+                        "app_package": p.native.app_package,
+                        "app_activity": p.native.app_activity,
+                        "bundle_id": p.native.bundle_id,
+                        "apk_path": p.native.apk_path,
+                        "ipa_path": p.native.ipa_path,
+                        "avd_name": p.native.avd_name,
+                        "simulator_udid": p.native.simulator_udid,
+                        "device_name": p.native.device_name,
+                        "platform_version": p.native.platform_version,
+                    }} if p.native else {}),
                 }
                 for p in self.platforms
             ],
@@ -297,8 +516,46 @@ class ScrapeConfig:
                 "max_retries": self.crawler.max_retries,
                 "respect_robots": self.crawler.respect_robots,
                 "follow_external_links": self.crawler.follow_external_links,
+                "headless": self.crawler.headless,
+            },
+            "session_strategy": {
+                "mode": self.session_strategy.mode,
+                "pages_per_session": self.session_strategy.pages_per_session,
+                "min_cooldown_sec": self.session_strategy.min_cooldown_sec,
+                "max_cooldown_sec": self.session_strategy.max_cooldown_sec,
+                "persist_cookies": self.session_strategy.persist_cookies,
+                "randomize_entry_points": self.session_strategy.randomize_entry_points,
+                "rotate_ip_per_session": self.session_strategy.rotate_ip_per_session,
+                "rotate_ip_per_n_sessions": self.session_strategy.rotate_ip_per_n_sessions,
+            },
+            "proxy": {
+                "enabled": self.proxy.enabled,
+                "provider": self.proxy.provider,
+                "endpoint_env": self.proxy.endpoint_env,
+                "rotate_per": self.proxy.rotate_per,
+                "pool_size": self.proxy.pool_size,
+                "geo": self.proxy.geo,
+                "domains": self.proxy.domains,
+            },
+            "browser": {
+                "type": self.browser.type,
+                "api_key_env": self.browser.api_key_env,
+                "project_id_env": self.browser.project_id_env,
+                "use_proxy": self.browser.use_proxy,
+                "proxy_geo": self.browser.proxy_geo,
+                "use_stealth": self.browser.use_stealth,
+                "solve_captchas": self.browser.solve_captchas,
+                "keep_alive": self.browser.keep_alive,
+                "context_id": self.browser.context_id,
             },
         }
+
+        if self.run_id:
+            data["run_id"] = self.run_id
+        if self.output_dir != "context":
+            data["output_dir"] = self.output_dir
+        if self.post_order and self.post_order.get("seeds"):
+            data["post_order"] = self.post_order
 
         with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)

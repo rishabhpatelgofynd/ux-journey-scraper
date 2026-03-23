@@ -9,14 +9,17 @@ Integrates:
 - Form filling (checkout flows)
 - Auth management (logged-in crawling)
 - Human behavior (anti-bot)
+- Session splitting support
+- Cookie persistence
 """
 import asyncio
 import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
+from urllib.parse import urlparse
 
-from ux_journey_scraper.config.scrape_config import ScrapeConfig
+from ux_journey_scraper.config.scrape_config import ScrapeConfig, PlatformConfig
 from ux_journey_scraper.core.auth_manager import AuthManager
 from ux_journey_scraper.core.element_intelligence import ElementIntelligence
 from ux_journey_scraper.core.form_filler import FormFiller
@@ -27,7 +30,10 @@ from ux_journey_scraper.core.page_analyzer import PageAnalyzer
 from ux_journey_scraper.core.page_readiness import PageReadinessEngine
 from ux_journey_scraper.core.screenshot_manager import ScreenshotManager
 from ux_journey_scraper.core.state_registry import StateRegistry
-from ux_journey_scraper.core.stealth_browser import StealthBrowser
+from ux_journey_scraper.core.stealth_browser import create_stealth_browser
+from ux_journey_scraper.core.navigation_behaviour import NavigationBehaviour
+from ux_journey_scraper.core.cookie_jar import CookieJar
+from ux_journey_scraper.core.session_planner import VisitPlan
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +45,11 @@ class AutonomousCrawler:
         self,
         config: ScrapeConfig,
         output_dir: str = "journey_output",
+        visit_plan: Optional[VisitPlan] = None,
+        cookie_jar: Optional[CookieJar] = None,
+        proxy_override: Optional[Dict] = None,
+        platform: Optional[PlatformConfig] = None,
+        auth_state: Optional[str] = None,
     ):
         """
         Initialize autonomous crawler.
@@ -46,10 +57,34 @@ class AutonomousCrawler:
         Args:
             config: Scrape configuration
             output_dir: Output directory for screenshots and data
+            visit_plan: Optional visit plan (for session-split mode)
+            cookie_jar: Optional cookie jar for persistence across sessions
+            proxy_override: Optional proxy config override
+            platform: Optional platform config (for continuous mode)
+            auth_state: Optional auth state (for continuous mode)
         """
         self.config = config
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True, parents=True)
+
+        # Session splitting support
+        self.visit_plan = visit_plan
+        self.cookie_jar = cookie_jar
+        self.proxy_override = proxy_override
+
+        # Platform and auth (for both modes)
+        if visit_plan:
+            # Split mode: get from visit plan
+            self.platform = visit_plan.platform
+            self.auth_state = visit_plan.auth_state
+            self.max_pages = visit_plan.max_pages
+            self.target_page_types = visit_plan.target_page_types
+        else:
+            # Continuous mode: get from parameters or config
+            self.platform = platform or config.platforms[0]
+            self.auth_state = auth_state or "logged_out"
+            self.max_pages = config.crawler.max_pages
+            self.target_page_types = []
 
         # Initialize components
         self.nav_queue = NavigationQueue(max_depth=config.crawler.max_depth)
@@ -59,6 +94,7 @@ class AutonomousCrawler:
         )
         self.element_intelligence = ElementIntelligence()
         self.human = HumanBehaviour()
+        self.nav_behaviour = NavigationBehaviour()
         self.screenshot_manager = ScreenshotManager(
             output_dir=self.output_dir / "screenshots",
             blur_pii=True,
@@ -71,6 +107,7 @@ class AutonomousCrawler:
         self.journey: Optional[Journey] = None
         self.current_step = 0
         self.pages_captured = 0
+        self.playwright = None
         self.browser = None
         self.context = None
         self.page = None
@@ -82,43 +119,64 @@ class AutonomousCrawler:
         Returns:
             Journey object with all captured steps
         """
-        logger.info(f"Starting autonomous crawl: {self.config.target['name']}")
-        logger.info(f"Base URL: {self.config.target['base_url']}")
-        logger.info(f"Max pages: {self.config.crawler.max_pages}")
-        logger.info(f"Max depth: {self.config.crawler.max_depth}")
+        session_id = self.visit_plan.session_id if self.visit_plan else "continuous"
+        logger.info(f"Starting crawl: {session_id} on {self.platform.type}")
+        logger.info(f"Base URL: {self.config.base_url}")
+        logger.info(f"Max pages: {self.max_pages}")
+        logger.info(f"Auth state: {self.auth_state}")
 
         # Initialize journey
-        platform = self.config.platforms[0]  # Use first platform
         self.journey = Journey(
-            start_url=self.config.target["base_url"],
-            viewport=(platform.viewport["width"], platform.viewport["height"]),
+            start_url=self.config.base_url,
+            viewport=(self.platform.viewport["width"], self.platform.viewport["height"]),
         )
 
         try:
-            # Launch stealth browser
-            self.browser, self.context = await StealthBrowser.launch(
-                platform_config=platform,
-                headless=False,  # Visible = harder to detect
+            # Launch stealth browser (routes to local or cloud)
+            self.playwright, self.browser, self.context = await create_stealth_browser(
+                config=self.config,
+                platform=self.platform,
+                proxy_override=self.proxy_override,
             )
+
+            # Inject cookies if available (returning visitor simulation)
+            if self.cookie_jar:
+                domain = urlparse(self.config.base_url).netloc
+                cookies = self.cookie_jar.get(domain)
+                if cookies:
+                    await self.context.add_cookies(cookies)
+                    logger.info(f"Injected {len(cookies)} cookies (returning visitor)")
 
             self.page = await self.context.new_page()
 
             # Authenticate if needed
-            if self.config.auth.logged_in:
+            if self.auth_state == "logged_in":
                 auth_success = await self.auth_manager.ensure_authenticated(self.page)
                 if not auth_success:
                     raise RuntimeError("Authentication failed")
 
-            # Initialize navigation queue with seed URLs
-            for seed_url in self.config.seed_urls:
-                self.nav_queue.add(
-                    NavigationAction(
-                        type="navigate",
-                        priority=100,  # Seeds are highest priority
-                        depth=0,
-                        url=seed_url,
-                    )
+            # Initialize navigation queue
+            entry_url = self.visit_plan.entry_url if self.visit_plan else self.config.base_url
+            self.nav_queue.add(
+                NavigationAction(
+                    type="navigate",
+                    priority=100,
+                    depth=0,
+                    url=entry_url,
                 )
+            )
+
+            # Add seed URLs with lower priority (explore options)
+            for seed_url in self.config.seed_urls:
+                if seed_url != entry_url:
+                    self.nav_queue.add(
+                        NavigationAction(
+                            type="navigate",
+                            priority=80,
+                            depth=0,
+                            url=seed_url,
+                        )
+                    )
 
             # Main crawl loop
             await self._crawl_loop()
@@ -131,12 +189,16 @@ class AutonomousCrawler:
             return self.journey
 
         finally:
+            if self.context:
+                await self.context.close()
             if self.browser:
                 await self.browser.close()
+            if self.playwright:
+                await self.playwright.stop()
 
     async def _crawl_loop(self) -> None:
         """Main crawl loop - process navigation queue until empty or limit reached."""
-        while self.pages_captured < self.config.crawler.max_pages:
+        while self.pages_captured < self.max_pages:
             # Get next action
             action = self.nav_queue.next()
             if not action:
@@ -144,7 +206,7 @@ class AutonomousCrawler:
                 break
 
             logger.info(
-                f"[{self.pages_captured + 1}/{self.config.crawler.max_pages}] "
+                f"[{self.pages_captured + 1}/{self.max_pages}] "
                 f"Processing action: {action.type} (priority={action.priority}, depth={action.depth})"
             )
 
@@ -182,6 +244,13 @@ class AutonomousCrawler:
                 await self._capture_screen()
                 self.pages_captured += 1
 
+                # Analyze page type for navigation behaviour
+                page_data = await self.page_analyzer.analyze_page(self.page)
+                page_type = page_data.get("page_type", "unknown")
+
+                # Simulate realistic page reading time
+                await self.nav_behaviour.simulate_page_reading(self.page, page_type)
+
                 # Fill forms if present
                 fill_result = await self.form_filler.fill_all_forms(self.page)
                 if fill_result["fields_filled"] > 0:
@@ -192,6 +261,19 @@ class AutonomousCrawler:
                     if self.state_registry.is_new_state(current_url, await self.page.content()):
                         await self._capture_screen()
                         self.pages_captured += 1
+
+                # Random browsing behaviors (anti-detection)
+                # Backtrack occasionally
+                await self.nav_behaviour.maybe_backtrack(self.page)
+
+                # Revisit homepage occasionally
+                await self.nav_behaviour.maybe_revisit_home(self.page, self.config.base_url)
+
+                # Scroll without clicking sometimes
+                await self.nav_behaviour.maybe_scroll_without_clicking(self.page)
+
+                # Long pause occasionally
+                await self.nav_behaviour.maybe_long_pause()
 
                 # Find new clickables
                 clickables = await self.element_intelligence.find_all_clickables(
@@ -332,3 +414,21 @@ class AutonomousCrawler:
             "queue_stats": self.nav_queue.get_stats(),
             "state_stats": self.state_registry.get_stats(),
         }
+
+    async def get_cookies(self) -> List[Dict]:
+        """
+        Get current cookies from browser context.
+        Used by CrawlOrchestrator to persist cookies across sessions.
+
+        Returns:
+            List of cookie dicts
+        """
+        if not self.context:
+            return []
+
+        try:
+            cookies = await self.context.cookies()
+            return cookies
+        except Exception as e:
+            logger.warning(f"Failed to get cookies: {e}")
+            return []

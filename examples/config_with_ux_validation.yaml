@@ -1,0 +1,111 @@
+# Example configuration with UX validation enabled
+#
+# This configuration demonstrates how to enable Baymard UX validation
+# during autonomous crawling
+
+target:
+  name: "Example E-commerce Site"
+  base_url: "https://www.example.com"
+
+# Seed URLs to start crawling from
+seed_urls:
+  - "https://www.example.com"
+  - "https://www.example.com/products"
+
+# Platform configurations
+platforms:
+  - type: "web_desktop"
+    viewport:
+      width: 1920
+      height: 1080
+    locale: "en-US"
+    timezone_id: "America/New_York"
+
+  - type: "web_mobile"
+    viewport:
+      width: 375
+      height: 812
+    locale: "en-US"
+    timezone_id: "America/New_York"
+
+# Authentication settings
+auth:
+  logged_out: true
+  logged_in: false
+
+# Crawler settings
+crawler:
+  max_depth: 5
+  max_pages: 50
+  delay_ms: 1000
+  delay_jitter_ms: 500
+  timeout_per_page_ms: 30000
+  max_retries: 2
+  respect_robots: true
+  follow_external_links: false
+  headless: true
+
+# Session strategy
+session_strategy:
+  mode: "split"
+  pages_per_session: 20
+  min_cooldown_sec: 120
+  max_cooldown_sec: 600
+  persist_cookies: true
+  randomize_entry_points: true
+
+# Browser provider
+browser:
+  type: "local"  # Use local Patchright browser
+
+# Form filling configuration
+form_fill:
+  first_name: "Test"
+  last_name: "User"
+  email: "test@example.com"
+  phone: "+1 555 123 4567"
+  address_line1: "123 Main St"
+  city: "New York"
+  state: "NY"
+  postal_code: "10001"
+  country: "US"
+  card_number: "4111111111111111"  # Visa test card
+  card_expiry_month: "12"
+  card_expiry_year: "2025"
+  card_cvv: "123"
+
+# ==========================================
+# UX VALIDATION CONFIGURATION (NEW!)
+# ==========================================
+ux_validation:
+  # Enable UX validation against Baymard guidelines
+  enabled: true
+
+  # Path to processed_guidelines.json
+  # Update this to point to your actual file location
+  guidelines_path: "./.local/baymard-scraper/data/raw/baymard_backup/processed_guidelines.json"
+
+  # Automatically detect page types (homepage, product, cart, etc.)
+  auto_detect_page_type: true
+
+  # Validate pages as they're captured during crawling
+  validate_on_capture: true
+
+  # Save detailed validation report
+  save_validation_report: true
+
+  # Minimum compliance score (0-100)
+  # Pages below this score will be flagged
+  min_compliance_score: 60.0
+
+  # Severity threshold: "low", "medium", "high"
+  # Only report violations at this level or higher
+  severity_threshold: "medium"
+
+  # Fail the crawl if critical violations are found
+  # (Set to false for reporting-only mode)
+  fail_on_violations: false
+
+# Proxy settings (optional)
+proxy:
+  enabled: false

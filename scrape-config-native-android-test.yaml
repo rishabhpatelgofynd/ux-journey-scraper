@@ -1,0 +1,23 @@
+# Native Android test config — Settings app (fully native, no WebView)
+target:
+  name: "Android Native Test"
+  base_url: "https://www.amazon.in"
+
+platforms:
+  - type: native_android
+    native:
+      appium_server: "http://localhost:4723"
+      app_package: "com.android.settings"
+      app_activity: ".Settings"
+      device_name: "Medium Phone API 36.1"
+      platform_version: "16"
+
+auth:
+  logged_out: true
+  logged_in: false
+
+seed_urls:
+  - "https://www.amazon.in"
+
+crawler:
+  max_pages: 8

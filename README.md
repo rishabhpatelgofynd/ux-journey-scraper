@@ -11,23 +11,41 @@ A powerful tool for UX designers, developers, and QA teams to autonomously captu
 
 ## 🎯 What It Does
 
-### Core Features (v0.3.0)
+### Core Features (v0.5.0)
 - **🤖 Autonomous Crawling**: Intelligently navigates websites without manual intervention
 - **🎯 Smart Element Detection**: Finds ALL clickables (buttons, links, onclick handlers, ARIA roles)
 - **📸 Journey Capture**: Records complete user flows with screenshots at each step
+- **📱 Multi-Platform**: Crawls desktop, mobile, tablet, and native apps in a single run
+- **📲 Native App Testing**: Android (UiAutomator2) and iOS (XCUITest) via Appium
 - **🔐 Auth Support**: Handles login flows and session management
 - **📋 Form Filling**: Automatically fills checkout forms (test data only)
 - **🕵️ Stealth Mode**: Anti-bot detection with human-like behavior simulation
 - **🔄 SPA Support**: Works with modern single-page applications
 - **🛡️ Privacy-Aware**: Automatically blurs PII in screenshots
 
+### Platform Support
+
+| Platform | Type | Status | Notes |
+|---|---|---|---|
+| Web Desktop | `web_desktop` | ✅ | Playwright / Chromium |
+| Web Mobile | `web_mobile` | ✅ | Playwright with mobile UA + viewport |
+| Web Tablet | `web_tablet` | ✅ | Playwright with tablet UA + viewport |
+| Android Native | `native_android` | ✅ | Appium UiAutomator2; requires `[native]` extras |
+| iOS Native | `native_ios` | ✅ | Appium XCUITest; macOS only; requires `[native]` extras |
+| WebView wrapper | auto-detected | ✅ | Ionic/Capacitor/Cordova — switches to DOM context |
+| Flutter (semantics on) | auto-detected | ✅ | Accessibility tree available |
+| Flutter (semantics off) | auto-detected | ✅ | Screenshot-only scroll mode |
+
 ## 🚀 Installation
 
 ### PyPI Installation (Recommended)
 
 ```bash
-# Install latest version (v0.3.0 - Autonomous Crawling)
+# Install latest version
 pip install ux-journey-scraper
+
+# With native Android/iOS app testing support
+pip install 'ux-journey-scraper[native]'
 ```
 
 ### Installation from Source
@@ -40,11 +58,9 @@ cd ux-journey-scraper
 # Install in development mode
 pip install -e .
 
-# OR install with full UX guidelines support
-pip install -e ".[full]"
+# With native app testing extras
+pip install -e ".[native]"
 ```
-
-**Note:** The `[full]` option includes `ecommerce-ux-guidelines` package for detailed UX analysis. The base installation works fully for autonomous crawling and journey capture without it.
 
 ### Post-Installation
 
@@ -52,6 +68,20 @@ After installation, install Playwright browsers:
 
 ```bash
 playwright install chromium
+```
+
+For native app testing, also install Appium drivers:
+
+```bash
+# Install Appium (once)
+npm install -g appium
+
+# Install platform drivers
+appium driver install uiautomator2   # Android
+appium driver install xcuitest       # iOS (macOS only)
+
+# Start Appium server
+appium --port 4723
 ```
 
 ## 📖 Quick Start
@@ -144,6 +174,57 @@ ux-journey crawl --config qa-config.yaml --output-dir qa_snapshots/
 - ✅ Issue summaries and scores
 
 ## 📋 CLI Reference
+
+## 🖥️ Platform Support
+
+| Platform | Type | Emulation |
+|---|---|---|
+| Desktop (1920×1080) | `web_desktop` | Chromium, Windows UA |
+| Mobile iPhone 14 Pro (390×844) | `web_mobile` | Touch events, iPhone UA, 2× DPR |
+| Tablet iPad Air (820×1180) | `web_tablet` | Touch events, iPad UA, 2× DPR |
+| Native Android app | `native_android` | Phase 2 (v0.5.0, requires Appium) |
+| Native iOS app | `native_ios` | Phase 2 (v0.5.0, requires Appium + Xcode) |
+
+All web platform types are **browser-based emulation** via Playwright viewport + UA spoofing — no real devices required.
+
+### Multi-Platform Crawling
+
+Specify multiple platforms in your config to crawl all of them in one run:
+
+```yaml
+platforms:
+  - type: web_desktop
+    viewport: { width: 1920, height: 1080 }
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
+
+  - type: web_mobile        # iPhone 14 Pro
+    viewport: { width: 390, height: 844 }
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
+
+  - type: web_tablet        # iPad Air
+    viewport: { width: 820, height: 1180 }
+    locale: "en-IN"
+    timezone_id: "Asia/Kolkata"
+```
+
+Output is organized per platform:
+
+```
+journey_output/
+  web_desktop/
+    journey.json
+    screenshots/
+  web_mobile/
+    journey.json
+    screenshots/
+  web_tablet/
+    journey.json
+    screenshots/
+```
+
+---
 
 ### `ux-journey record`
 
@@ -245,9 +326,12 @@ for step in journey.steps:
 
 ## 🛣️ Roadmap
 
-### v0.3.0 (Current) - Pure Journey Capture
+### v0.4.0 (Current) - Multi-Platform Web Crawling
 - ✅ Autonomous crawling with priority queue
 - ✅ Desktop web journey recording
+- ✅ Mobile viewport emulation (iPhone 14 Pro)
+- ✅ Tablet viewport emulation (iPad Air)
+- ✅ Multi-platform crawl in a single run (per-platform output dirs)
 - ✅ Smart element detection (4 strategies)
 - ✅ Auth support and session management
 - ✅ Form auto-fill with safeguards
@@ -255,8 +339,15 @@ for step in journey.steps:
 - ✅ robots.txt handling
 - ✅ Stealth mode (anti-bot detection)
 
+### v0.5.0 (Next) - Native App Testing (Appium)
+- ⬜ Native Android app crawling (UiAutomator2)
+- ⬜ Native iOS app crawling (XCUITest, macOS only)
+- ⬜ Appium session setup and element detection via accessibility tree
+- ⬜ Integration with `platform_discovery.py` (bundle ID / package name lookup)
+
+  **Requirements**: `pip install Appium-Python-Client`, Android SDK + ADB or Xcode + iOS Simulator
+
 ### Future Enhancements
-- ⬜ Mobile viewports (responsive crawling)
 - ⬜ Multi-page site mapping
 - ⬜ CAPTCHA handling improvements
 - ⬜ Visual regression detection

@@ -5,6 +5,7 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from playwright.async_api import async_playwright
 
@@ -16,17 +17,18 @@ from ux_journey_scraper.core.screenshot_manager import ScreenshotManager
 class JourneyStep:
     """Represents a single step in a user journey."""
 
-    def __init__(self, step_number, url, title, screenshot_path, page_data):
+    def __init__(self, step_number, url, title, screenshot_path, page_data, ux_validation=None):
         self.step_number = step_number
         self.url = url
         self.title = title
         self.screenshot_path = screenshot_path
         self.page_data = page_data
+        self.ux_validation = ux_validation  # UX validation results
         self.timestamp = datetime.now().isoformat()
 
     def to_dict(self):
         """Convert step to dictionary."""
-        return {
+        result = {
             "step_number": self.step_number,
             "url": self.url,
             "title": self.title,
@@ -34,6 +36,12 @@ class JourneyStep:
             "timestamp": self.timestamp,
             "page_data": self.page_data,
         }
+
+        # Include UX validation if available
+        if self.ux_validation:
+            result["ux_validation"] = self.ux_validation
+
+        return result
 
 
 class Journey:
@@ -88,6 +96,7 @@ class Journey:
                 step_data["title"],
                 step_data["screenshot_path"],
                 step_data["page_data"],
+                ux_validation=step_data.get("ux_validation"),  # Load validation if present
             )
             step.timestamp = step_data["timestamp"]
             journey.steps.append(step)
@@ -106,6 +115,8 @@ class JourneyRecorder:
         respect_robots=True,
         headless=False,
         output_dir="journey_output",
+        ux_validation_enabled=False,
+        guidelines_path=None,
     ):
         """
         Initialize journey recorder.
@@ -117,6 +128,8 @@ class JourneyRecorder:
             respect_robots: Whether to check robots.txt
             headless: Run browser in headless mode
             output_dir: Directory for output files
+            ux_validation_enabled: Enable UX validation against Baymard guidelines
+            guidelines_path: Path to processed_guidelines.json
         """
         self.start_url = start_url
         self.viewport = viewport
@@ -132,6 +145,30 @@ class JourneyRecorder:
         )
         self.page_analyzer = PageAnalyzer()
         self.robots_checker = RobotsChecker() if respect_robots else None
+
+        # Initialize UX validator if enabled
+        self.ux_validator = None
+        self.ux_validation_enabled = ux_validation_enabled
+
+        if ux_validation_enabled:
+            if not VALIDATORS_AVAILABLE:
+                print("⚠️  UX validation requested but validators not available")
+                print("   Install with: pip install beautifulsoup4")
+                self.ux_validation_enabled = False
+            elif not guidelines_path:
+                print("⚠️  UX validation enabled but guidelines_path not provided")
+                self.ux_validation_enabled = False
+            else:
+                try:
+                    print(f"📋 Loading Baymard guidelines from: {guidelines_path}")
+                    guideline_index = GuidelineIndex(guidelines_path)
+                    self.ux_validator = BaymardValidator(guideline_index)
+                    stats = guideline_index.get_statistics()
+                    print(f"   ✓ Loaded {stats['total_unique_guidelines']} guidelines")
+                    print(f"   ✓ Validation coverage: {self.ux_validator.get_validation_coverage()['coverage_percentage']}%")
+                except Exception as e:
+                    print(f"⚠️  Failed to initialize UX validator: {e}")
+                    self.ux_validation_enabled = False
 
         self.journey = None
         self.current_step = 0
@@ -227,6 +264,35 @@ class JourneyRecorder:
         page_data = await self.page_analyzer.analyze_page(page)
         print(f"   ✓ Page analyzed: {page.url}")
 
+        # Run UX validation if enabled
+        ux_validation = None
+        if self.ux_validation_enabled and self.ux_validator:
+            try:
+                print(f"   🔍 Running UX validation...")
+                ux_validation = self.ux_validator.validate_page(
+                    url=page.url,
+                    html=page_data["html"],
+                    title=page_data["title"],
+                    screenshot_path=screenshot_path,
+                    page_data=page_data,
+                )
+
+                # Print validation summary
+                score = ux_validation["compliance_score"]
+                violations_count = len(ux_validation["violations"])
+                warnings_count = len(ux_validation["warnings"])
+
+                score_emoji = "🟢" if score >= 80 else "🟡" if score >= 60 else "🔴"
+                print(f"   {score_emoji} UX Compliance: {score}% ({ux_validation['page_type']})")
+
+                if violations_count > 0:
+                    print(f"   ⚠️  {violations_count} violation(s) found")
+                if warnings_count > 0:
+                    print(f"   ℹ️  {warnings_count} warning(s)")
+
+            except Exception as e:
+                print(f"   ⚠️  UX validation failed: {e}")
+
         # Create step
         step = JourneyStep(
             step_number=self.current_step,
@@ -234,6 +300,7 @@ class JourneyRecorder:
             title=await page.title(),
             screenshot_path=screenshot_path,
             page_data=page_data,
+            ux_validation=ux_validation,
         )
 
         # Add to journey
