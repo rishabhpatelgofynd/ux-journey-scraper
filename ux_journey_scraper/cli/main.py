@@ -197,12 +197,31 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
         BrowserProvider, NativeAppConfig,
     )
 
+    # Known brand web URLs — fallback to www.{brand}.com
+    BRAND_URLS = {
+        "amazon":   "https://www.amazon.in",
+        "flipkart": "https://www.flipkart.com",
+        "nykaa":    "https://www.nykaa.com",
+        "myntra":   "https://www.myntra.com",
+        "ajio":     "https://www.ajio.com",
+        "meesho":   "https://www.meesho.com",
+        "swiggy":   "https://www.swiggy.com",
+        "zomato":   "https://www.zomato.com",
+        "snapdeal": "https://www.snapdeal.com",
+        "walmart":  "https://www.walmart.com",
+        "target":   "https://www.target.com",
+        "ebay":     "https://www.ebay.com",
+        "etsy":     "https://www.etsy.com",
+        "shein":    "https://www.shein.com",
+        "temu":     "https://www.temu.com",
+    }
+    base_url = BRAND_URLS.get(brand.lower(), f"https://www.{brand.lower()}.com")
+
     VIEWPORTS = {
         "web_desktop": {"width": 1920, "height": 1080},
         "web_mobile":  {"width": 390,  "height": 844},
         "web_tablet":  {"width": 820,  "height": 1180},
     }
-    base_url = f"https://www.{brand.lower()}.in"
     platform_list = [p.strip() for p in platforms.split(",")]
     total_pages = 0
 
@@ -248,6 +267,7 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
             max_pages=max_pages,
             respect_robots=False,
             headless=True,
+            timeout_per_page_ms=30000,
         ),
         browser=BrowserProvider(type="local"),
     )

@@ -136,6 +136,7 @@ LAUNCH_ARGS = [
     "--disable-automation",
     "--start-maximized",
     "--disable-features=IsolateOrigins,site-per-process",
+    "--disable-http2",  # Avoids ERR_HTTP2_PROTOCOL_ERROR on some networks
 ]
 
 
