@@ -124,10 +124,23 @@ class AppProvisioner:
             # 4. Download APK
             click_log(f"Downloading {brand.title()} APK...")
             apk_path = await self._download_apk(package, brand)
-            # 5. Install
+            # 5. Install with retry
             click_log(f"Installing {brand.title()}...")
-            self._install_apk(apk_path)
-            click_log(f"{brand.title()} installed.")
+            for attempt in range(3):
+                try:
+                    self._install_apk(apk_path)
+                    click_log(f"{brand.title()} installed.")
+                    break
+                except RuntimeError as e:
+                    if attempt < 2:
+                        click_log(f"Install attempt {attempt+1} failed, retrying...")
+                        await asyncio.sleep(3)
+                    else:
+                        # Last attempt — check if actually installed despite error
+                        if self._is_installed_android(package):
+                            click_log(f"{brand.title()} installed (despite error).")
+                        else:
+                            raise
 
         # 6. Always auto-detect real activity from device (overrides table)
         detected = self._detect_main_activity(package)

@@ -248,7 +248,10 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
                     platforms=[platform],
                     auth=AuthConfig(logged_out=True, logged_in=False),
                     seed_urls=[base_url],
-                    crawler=CrawlerConfig(max_pages=max_pages),
+                    crawler=CrawlerConfig(
+                        max_pages=max_pages,
+                        respect_robots=False,
+                    ),
                 )
                 crawler = AutonomousCrawler(
                     config=scrape_config,
