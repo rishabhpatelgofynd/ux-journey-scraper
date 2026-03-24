@@ -17,7 +17,7 @@ async def main():
 
     # Path to Baymard guidelines
     # Update this path to your actual guidelines file
-    guidelines_path = Path(__file__).parent.parent.parent.parent / ".local/baymard-scraper/data/raw/baymard_backup/processed_guidelines.json"
+    guidelines_path = Path(__file__).parent.parent.parent.parent / "path/to/your/processed_guidelines.json"
 
     if not guidelines_path.exists():
         print(f"❌ Guidelines file not found at: {guidelines_path}")

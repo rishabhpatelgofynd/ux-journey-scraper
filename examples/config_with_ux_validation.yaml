@@ -83,7 +83,7 @@ ux_validation:
 
   # Path to processed_guidelines.json
   # Update this to point to your actual file location
-  guidelines_path: "./.local/baymard-scraper/data/raw/baymard_backup/processed_guidelines.json"
+  guidelines_path: "./path/to/your/processed_guidelines.json"
 
   # Automatically detect page types (homepage, product, cart, etc.)
   auto_detect_page_type: true
