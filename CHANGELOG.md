@@ -16,10 +16,12 @@ app architecture types are now supported: WebView wrappers (Ionic/Capacitor/Cord
 React Native, Flutter, and pure native (Swift/Kotlin).
 
 #### New Platform Types
+
 - **`native_android`**: Android app testing via UiAutomator2
 - **`native_ios`**: iOS app testing via XCUITest (macOS only)
 
 #### New Core Modules
+
 - **`core/appium_session.py`**: Builds Appium capabilities for Android (UiAutomator2)
   and iOS (XCUITest); validates server reachability before crawl starts
 - **`core/native_element_detector.py`**: Traverses Appium accessibility tree and
@@ -33,6 +35,7 @@ React Native, Flutter, and pure native (Swift/Kotlin).
   handles WebView, native, and Flutter (semantics-disabled) modes
 
 #### Config Changes (`config/scrape_config.py`)
+
 - New `NativeAppConfig` dataclass (Appium server, app package/bundle ID, device name,
   platform version, AVD name, APK/IPA path, simulator UDID)
 - `PlatformConfig.viewport` is now `Optional` — not required for native platforms
@@ -41,21 +44,25 @@ React Native, Flutter, and pure native (Swift/Kotlin).
 - `ScrapeConfig.load()` parses the `native:` YAML block into `NativeAppConfig`
 
 #### CLI Changes (`cli/main.py`)
+
 - Native platforms route to `AppiumCrawler`; web platforms to `AutonomousCrawler`
 - Graceful skip with install instructions when Appium package is not installed
 - Version bumped to `0.5.0`
 
 #### Platform Discovery (`core/platform_discovery.py`)
+
 - `_discover_ios_bundle_id()`: Live iTunes Search API (public, no key); table fallback
 - `_discover_android_package()`: Live `google-play-scraper` search; table fallback
 
 #### Architecture Routing
+
 - WebView (Ionic/Capacitor): switches to WEBVIEW context → DOM automation
 - React Native / Swift / Kotlin: native accessibility tree traversal
 - Flutter (semantics disabled): screenshot-only scroll mode with log warning
 - OS permission dialogs auto-dismissed (camera, location, notifications)
 
 ### Added - Dependencies (optional group `[native]`)
+
 - `Appium-Python-Client>=3.1.0`
 - `google-play-scraper>=1.2.0`
 - `imagehash>=4.3.0`
@@ -63,6 +70,7 @@ React Native, Flutter, and pure native (Swift/Kotlin).
 Install with: `pip install 'ux-journey-scraper[native]'`
 
 ### Output Structure
+
 ```
 journey_output/
   web_desktop/journey.json + screenshots/    ← Phase 1
@@ -78,22 +86,27 @@ journey_output/
 **Major Feature**: `ux-journey crawl` now loops over all configured platforms in a single run, producing per-platform output directories.
 
 #### Multi-Platform Crawling
+
 - **All platforms in one run**: Configure `web_desktop`, `web_mobile`, and `web_tablet` in YAML; the crawler runs each sequentially and saves results to separate subdirs (`journey_output/web_desktop/`, `journey_output/web_mobile/`, `journey_output/web_tablet/`)
 - **Tablet support**: `web_tablet` (iPad Air 820×1180) is now a first-class platform alongside desktop and mobile
 - **Per-platform output**: Each platform gets its own `journey.json` and `screenshots/` folder
 
 #### Bug Fixes
+
 - **Tablet UA string**: Fixed truncated iPad user-agent (was missing `(KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1` suffix)
 - **Tablet `device_scale_factor`**: Fixed — tablet now correctly gets `device_scale_factor=2.0` (same as mobile); was incorrectly using `1.0`
 
 ### Changed
+
 - **Version**: Bumped to 0.4.0
 - **CLI**: `crawl` command header now shows `v0.4.0`; output summary shows per-platform page counts
 
 ### Added - Dependencies
+
 - `aiohttp>=3.9.0`: Required by `platform_discovery.py` (was imported but missing from `pyproject.toml`)
 
 ### Roadmap - Phase 2 (v0.5.0)
+
 Native iOS/Android app testing via Appium is documented as the next milestone. Stubs (`platform_discovery.py`, `app_architecture_detector.py`) are preserved for Phase 2 integration.
 
 ## [0.2.0] - 2026-03-19
@@ -103,6 +116,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 **Major Feature**: Full autonomous crawling capabilities - the scraper now intelligently navigates websites without manual intervention.
 
 #### New Core Components
+
 - **YAML Configuration System** (`config/scrape_config.py`): Config-first approach replacing individual CLI flags
 - **Autonomous Crawler** (`core/autonomous_crawler.py`): Priority queue-based intelligent navigation engine
 - **Navigation Queue** (`core/navigation_queue.py`): Priority heap for smart action ordering ("Add to Cart" before "Learn More")
@@ -115,10 +129,12 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - **Form Filler** (`core/form_filler.py`): Smart autocomplete-based form filling with payment safeguards
 
 #### New CLI Commands
+
 - `ux-journey crawl --config <file>`: Primary command for autonomous crawling (v0.2.0)
 - Config file support: All settings now via YAML instead of CLI flags
 
 #### Enhanced Capabilities
+
 - **SPA Support**: Full support for single-page applications with dynamic content
 - **Lazy Loading**: Scroll-triggered content detection and loading
 - **Checkout Flows**: Automatic form filling for e-commerce checkout (test data only)
@@ -127,25 +143,30 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - **Priority Navigation**: High-value actions (purchase flows) prioritized over low-value (footer links)
 
 ### Changed
+
 - **Version**: Bumped to 0.2.0
 - **CLI**: Old commands (`record`, `run`) now deprecated with warnings
 - **Output**: Enhanced journey format (same structure, enhanced metadata coming in v0.3.0)
 
 ### Added - Dependencies
+
 - `pyyaml>=6.0.0`: YAML configuration parsing
 - `aiofiles>=23.0.0`: Async file I/O operations
 
 ### Added - Safety Features
+
 - **Payment Submit Safeguard**: Global kill switch prevents real payment submissions
 - **Test Cards Only**: Validates only test payment cards are used (4111111111111111, etc.)
 - **CAPTCHA Detection**: Detects and flags CAPTCHA challenges
 
 ### Added - Documentation
+
 - `MIGRATION.md`: Comprehensive v0.1.0 → v0.2.0 migration guide
 - `scrape-config.example.yaml`: Full configuration template with comments
 - Enhanced README with autonomous crawling examples
 
 ### Improved
+
 - **Page Readiness**:
   - From: Basic `networkidle` check
   - To: DOM stability + spinner dismissal + image loading + lazy-load scroll
@@ -162,21 +183,25 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
   - **Impact**: Prevents infinite loops on SPAs
 
 ### Breaking Changes
+
 - **Config Required**: `ux-journey crawl` requires `--config` flag
 - **Version Change**: CLI version now shows 0.2.0
 - **Deprecated Commands**: `record` and `run` still work but show deprecation warnings
 
 ### Expected Coverage Improvement
+
 - **v0.1.0 Baseline**: 30% of websites work well (static sites only)
 - **v0.2.0 Target**: 80-90% of websites (SPAs, e-commerce, auth-required sites)
 
 ### Known Limitations (v0.2.0)
+
 - Integration tests not yet implemented (Task #14, #15 pending)
 - Context file output not yet implemented (planned for v0.3.0)
 - Multi-platform parallel crawling not yet implemented
 - iOS/Android native app support not yet implemented
 
 ### Technical Debt
+
 - Unit tests needed for new modules (Tasks #14, #15)
 - Performance benchmarking needed
 - Memory profiling for long crawls needed
@@ -184,6 +209,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 ## [0.1.0] - TBD
 
 ### Added
+
 - **Journey Recording**: Capture multi-step user journeys through websites using Playwright
 - **Screenshot Capture**: Automatically screenshot every step in the journey
 - **PII Protection**: Blur personally identifiable information (emails, credit cards, phone numbers) in screenshots
@@ -199,6 +225,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 ### Features in Detail
 
 #### Journey Recording
+
 - Playwright-based browser automation
 - Multi-step journey capture with navigation tracking
 - Automatic screenshot capture at each step
@@ -206,6 +233,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Export journey data as JSON
 
 #### UX Guidelines
+
 - 324+ guidelines from e-commerce research
 - Categorized by: buttons, forms, navigation, content, checkout, mobile, etc.
 - Severity levels: critical, major, minor
@@ -213,6 +241,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Guideline references and sources
 
 #### Privacy & Ethics
+
 - PII blurring using pattern matching (emails, credit cards, SSN, phone numbers)
 - Robots.txt parsing and compliance
 - Rate limiting to avoid overwhelming servers
@@ -220,6 +249,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Respects meta robots tags
 
 #### Accessibility
+
 - WCAG 2.1 Level A/AA checks
 - Color contrast validation
 - Alt text detection
@@ -228,6 +258,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Focus indicator checks
 
 #### Reports
+
 - HTML reports with embedded screenshots
 - Violation summaries with severity breakdown
 - Step-by-step journey visualization
@@ -235,6 +266,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Exportable findings as JSON
 
 ### Technical Improvements
+
 - Type hints throughout codebase
 - Comprehensive error handling
 - Logging with configurable verbosity
@@ -243,6 +275,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Async/await support for performance
 
 ### Documentation
+
 - README with installation and usage examples
 - CONTRIBUTING guide for developers
 - PUBLISHING guide for maintainers
@@ -250,6 +283,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Example usage in CLI help
 
 ### Testing & Quality
+
 - Unit tests for core functionality
 - Integration tests (skipped in CI, manual for now)
 - Code coverage tracking
@@ -259,6 +293,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Pre-commit hooks
 
 ### CI/CD
+
 - GitHub Actions workflow
 - Automated testing on Python 3.9, 3.10, 3.11, 3.12
 - Linting and formatting checks
@@ -267,6 +302,7 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - Security scanning (dependency, SAST, secrets)
 
 ### Known Limitations
+
 - Integration tests require manual setup (Playwright installation)
 - ecommerce-ux-guidelines package is optional (full UX analysis requires it)
 - Limited to Chromium browser (Firefox, Safari not yet supported)
@@ -274,18 +310,22 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 - No parallel journey recording (single-threaded)
 
 ### Breaking Changes
+
 - None (initial release)
 
 ### Deprecated
+
 - None (initial release)
 
 ### Security
+
 - PII blurring to prevent accidental exposure of sensitive data
 - Robots.txt compliance to respect website policies
 - No telemetry or data collection
 - Local-only processing
 
 ### Fixed
+
 - None (initial release)
 
 ---
@@ -295,21 +335,27 @@ Native iOS/Android app testing via Appium is documented as the next milestone. S
 ### [X.Y.Z] - YYYY-MM-DD
 
 #### Added
+
 - New features
 
 #### Changed
+
 - Changes to existing functionality
 
 #### Deprecated
+
 - Soon-to-be removed features
 
 #### Removed
+
 - Removed features
 
 #### Fixed
+
 - Bug fixes
 
 #### Security
+
 - Security improvements and fixes
 
 ---

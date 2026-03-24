@@ -4,11 +4,12 @@ Cookie persistence across visit sessions.
 Persists browser cookies across multiple visit sessions to make the scraper
 appear as a returning visitor, not a new user every time.
 """
+
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -107,8 +108,7 @@ class CookieJar:
             data = {
                 "saved_at": datetime.utcnow().isoformat(),
                 "domains": {
-                    domain: cookies
-                    for domain, cookies in self._cookies.items()
+                    domain: cookies for domain, cookies in self._cookies.items()
                 },
             }
 

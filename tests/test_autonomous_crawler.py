@@ -1,21 +1,22 @@
 """
 Tests for autonomous crawler functionality.
 """
-import pytest
-from pathlib import Path
-import tempfile
-import shutil
 
+import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 from ux_journey_scraper.config.scrape_config import (
-    ScrapeConfig,
-    PlatformConfig,
     AuthConfig,
-    FormFillConfig,
     CrawlerConfig,
+    FormFillConfig,
+    PlatformConfig,
+    ScrapeConfig,
 )
+from ux_journey_scraper.core.element_intelligence import ElementIntelligence
 from ux_journey_scraper.core.navigation_queue import NavigationAction, NavigationQueue
 from ux_journey_scraper.core.state_registry import StateRegistry
-from ux_journey_scraper.core.element_intelligence import ElementIntelligence
 
 
 class TestScrapeConfig:
@@ -279,14 +280,20 @@ class TestStateRegistry:
         dom = "<html><body>Test</body></html>"
 
         # Visit URL with tracking params
-        assert registry.is_new_state(
-            "https://example.com/page?utm_source=test&utm_medium=email", dom
-        ) is True
+        assert (
+            registry.is_new_state(
+                "https://example.com/page?utm_source=test&utm_medium=email", dom
+            )
+            is True
+        )
 
         # Same URL with different tracking params should be duplicate
-        assert registry.is_new_state(
-            "https://example.com/page?utm_source=other&fbclid=123", dom
-        ) is False
+        assert (
+            registry.is_new_state(
+                "https://example.com/page?utm_source=other&fbclid=123", dom
+            )
+            is False
+        )
 
         # Same URL without tracking params should also be duplicate
         assert registry.is_new_state("https://example.com/page", dom) is False

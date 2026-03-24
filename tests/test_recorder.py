@@ -1,6 +1,7 @@
 """
 Tests for Journey Recorder
 """
+
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
@@ -22,7 +23,11 @@ class TestJourneyRecorder:
     def test_url_validation(self):
         """Test URL validation logic"""
         # Test valid URLs
-        valid_urls = ["https://example.com", "http://example.com", "https://example.com/path"]
+        valid_urls = [
+            "https://example.com",
+            "http://example.com",
+            "https://example.com/path",
+        ]
         for url in valid_urls:
             assert url.startswith("http"), f"URL {url} should be valid"
 

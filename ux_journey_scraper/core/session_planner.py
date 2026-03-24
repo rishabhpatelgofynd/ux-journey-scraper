@@ -4,12 +4,13 @@ Session planner for split-session crawls.
 Plans all visit sessions before the crawl starts. Each visit session has a goal,
 a page budget, an entry point, and a platform/auth assignment.
 """
+
+import logging
+import random
 from dataclasses import dataclass, field
 from typing import List, Optional
-import random
-import logging
 
-from ..config.scrape_config import ScrapeConfig, PlatformConfig
+from ..config.scrape_config import PlatformConfig, ScrapeConfig
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +20,16 @@ class VisitPlan:
     """Plan for a single visit session."""
 
     session_id: str
-    goal: str                     # "browse" | "search" | "cart" | "checkout" | "post_order" | "fill_gaps"
-    entry_url: str                # Where this session starts
-    entry_strategy: str           # "homepage" | "deep_link_pdp" | "deep_link_category" | "saved_cart"
+    goal: str  # "browse" | "search" | "cart" | "checkout" | "post_order" | "fill_gaps"
+    entry_url: str  # Where this session starts
+    entry_strategy: (
+        str  # "homepage" | "deep_link_pdp" | "deep_link_category" | "saved_cart"
+    )
     target_page_types: List[str]  # Page types to prioritize in nav queue
-    max_pages: int                # Page budget for this session
-    auth_state: str               # "logged_out" | "logged_in"
-    platform: PlatformConfig      # Which platform config to use
-    proxy_slot: int               # Which proxy IP slot to use (for rotation)
+    max_pages: int  # Page budget for this session
+    auth_state: str  # "logged_out" | "logged_in"
+    platform: PlatformConfig  # Which platform config to use
+    proxy_slot: int  # Which proxy IP slot to use (for rotation)
 
 
 class SessionPlanner:
@@ -46,13 +49,13 @@ class SessionPlanner:
 
     # Ordered goals — browse before transact, transact before post-order
     GOAL_SEQUENCE = [
-        ("browse",      "logged_out", 20),
-        ("search",      "logged_out", 15),
-        ("browse",      "logged_out", 15),   # Second browse pass for depth
-        ("cart",        "logged_out", 12),    # Add to cart, explore cart page
-        ("checkout",    "logged_in",  10),    # Login → checkout → confirmation
-        ("post_order",  "logged_in",   8),    # Orders, tracking, returns
-        ("fill_gaps",   "logged_out", 15),    # Catch anything missed
+        ("browse", "logged_out", 20),
+        ("search", "logged_out", 15),
+        ("browse", "logged_out", 15),  # Second browse pass for depth
+        ("cart", "logged_out", 12),  # Add to cart, explore cart page
+        ("checkout", "logged_in", 10),  # Login → checkout → confirmation
+        ("post_order", "logged_in", 8),  # Orders, tracking, returns
+        ("fill_gaps", "logged_out", 15),  # Catch anything missed
     ]
 
     ENTRY_STRATEGIES = [
@@ -87,7 +90,9 @@ class SessionPlanner:
                     continue
 
                 # Respect per-session page budget from config
-                effective_pages = min(max_pages, config.session_strategy.pages_per_session)
+                effective_pages = min(
+                    max_pages, config.session_strategy.pages_per_session
+                )
 
                 # Entry point selection
                 entry_url, entry_strategy = self._pick_entry(
@@ -97,22 +102,26 @@ class SessionPlanner:
                 # Proxy slot rotation
                 if config.session_strategy.rotate_ip_per_session:
                     proxy_slot += 1
-                elif i > 0 and i % config.session_strategy.rotate_ip_per_n_sessions == 0:
+                elif (
+                    i > 0 and i % config.session_strategy.rotate_ip_per_n_sessions == 0
+                ):
                     proxy_slot += 1
 
                 session_id = f"visit_{platform.type}_{goal}_{i:02d}"
 
-                plans.append(VisitPlan(
-                    session_id=session_id,
-                    goal=goal,
-                    entry_url=entry_url,
-                    entry_strategy=entry_strategy,
-                    target_page_types=self._target_types_for_goal(goal),
-                    max_pages=effective_pages,
-                    auth_state=auth,
-                    platform=platform,
-                    proxy_slot=proxy_slot % max(config.proxy.pool_size, 1),
-                ))
+                plans.append(
+                    VisitPlan(
+                        session_id=session_id,
+                        goal=goal,
+                        entry_url=entry_url,
+                        entry_strategy=entry_strategy,
+                        target_page_types=self._target_types_for_goal(goal),
+                        max_pages=effective_pages,
+                        auth_state=auth,
+                        platform=platform,
+                        proxy_slot=proxy_slot % max(config.proxy.pool_size, 1),
+                    )
+                )
 
                 logger.debug(
                     f"Planned {session_id}: {goal}/{auth} on {platform.type}, "
@@ -170,12 +179,12 @@ class SessionPlanner:
             List of page type strings to prioritize
         """
         return {
-            "browse":     ["home", "plp", "pdp"],
-            "search":     ["search", "plp", "pdp"],
-            "cart":       ["pdp", "cart"],
-            "checkout":   ["cart", "checkout", "confirmation"],
+            "browse": ["home", "plp", "pdp"],
+            "search": ["search", "plp", "pdp"],
+            "cart": ["pdp", "cart"],
+            "checkout": ["cart", "checkout", "confirmation"],
             "post_order": ["orders", "order_detail", "tracking", "returns"],
-            "fill_gaps":  ["account", "wishlist", "unknown"],
+            "fill_gaps": ["account", "wishlist", "unknown"],
         }.get(goal, [])
 
     def estimate_total_pages(self, plans: List[VisitPlan]) -> int:
@@ -202,15 +211,17 @@ class SessionPlanner:
             Estimated time in seconds
         """
         # Time per page (avg delay + page load)
-        time_per_page = (config.crawler.delay_ms + config.crawler.timeout_per_page_ms) / 1000
+        time_per_page = (
+            config.crawler.delay_ms + config.crawler.timeout_per_page_ms
+        ) / 1000
 
         # Time for all pages
         crawl_time = self.estimate_total_pages(plans) * time_per_page
 
         # Cooldown time between sessions
         avg_cooldown = (
-            config.session_strategy.min_cooldown_sec +
-            config.session_strategy.max_cooldown_sec
+            config.session_strategy.min_cooldown_sec
+            + config.session_strategy.max_cooldown_sec
         ) / 2
         cooldown_time = avg_cooldown * (len(plans) - 1)
 
@@ -226,7 +237,4 @@ class SessionPlanner:
         Returns:
             List of goal strings
         """
-        return [
-            goal for goal, auth, _ in self.GOAL_SEQUENCE
-            if auth == auth_state
-        ]
+        return [goal for goal, auth, _ in self.GOAL_SEQUENCE if auth == auth_state]

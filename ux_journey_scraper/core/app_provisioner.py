@@ -7,6 +7,7 @@ Usage:
     config = await provisioner.provision("Amazon", "native_android")
     # Returns ready NativeAppConfig — pass directly to AppiumCrawler
 """
+
 import asyncio
 import logging
 import shutil
@@ -18,33 +19,36 @@ logger = logging.getLogger(__name__)
 
 # Well-known brand → package/bundle mapping (instant, no API call)
 KNOWN_ANDROID = {
-    "amazon":     ("com.amazon.mShop.android.shopping", "com.amazon.mShop.home.HomeActivity"),
-    "flipkart":   ("com.flipkart.android",              ".MainActivity"),
-    "myntra":     ("com.myntra.android",                ".MainActivity"),
-    "ajio":       ("com.ril.ajio",                      ".MainActivity"),
-    "swiggy":     ("in.swiggy.android",                 ".MainActivity"),
-    "zomato":     ("com.application.zomato",            ".MainActivity"),
-    "meesho":     ("com.meesho.supply",                 ".MainActivity"),
-    "snapdeal":   ("com.snapdeal.main",                 ".MainActivity"),
-    "nykaa":      ("com.fsn.nykaa",                     ".MainActivity"),
-    "walmart":    ("com.walmart.android",               ".app.MainActivityProxy"),
-    "target":     ("com.target.ui",                     ".MainActivity"),
-    "ebay":       ("com.ebay.mobile",                   ".MainActivity"),
-    "etsy":       ("com.etsy.android",                  ".MainActivity"),
-    "shein":      ("com.zzkko",                         ".MainActivity"),
-    "temu":       ("com.einnovation.temu",              ".MainActivity"),
+    "amazon": (
+        "com.amazon.mShop.android.shopping",
+        "com.amazon.mShop.home.HomeActivity",
+    ),
+    "flipkart": ("com.flipkart.android", ".MainActivity"),
+    "myntra": ("com.myntra.android", ".MainActivity"),
+    "ajio": ("com.ril.ajio", ".MainActivity"),
+    "swiggy": ("in.swiggy.android", ".MainActivity"),
+    "zomato": ("com.application.zomato", ".MainActivity"),
+    "meesho": ("com.meesho.supply", ".MainActivity"),
+    "snapdeal": ("com.snapdeal.main", ".MainActivity"),
+    "nykaa": ("com.fsn.nykaa", ".MainActivity"),
+    "walmart": ("com.walmart.android", ".app.MainActivityProxy"),
+    "target": ("com.target.ui", ".MainActivity"),
+    "ebay": ("com.ebay.mobile", ".MainActivity"),
+    "etsy": ("com.etsy.android", ".MainActivity"),
+    "shein": ("com.zzkko", ".MainActivity"),
+    "temu": ("com.einnovation.temu", ".MainActivity"),
 }
 
 KNOWN_IOS = {
-    "amazon":   "com.amazon.Amazon",
+    "amazon": "com.amazon.Amazon",
     "flipkart": "com.flipkart.iphone",
-    "myntra":   "com.myntra.MyntraApp",
-    "swiggy":   "in.swiggy.SwiggyApp",
-    "zomato":   "com.zomato.Zomato",
-    "walmart":  "com.walmart.customer",
-    "target":   "com.target.mobile",
-    "ebay":     "com.ebay.iphone",
-    "etsy":     "com.etsy.etsyforios",
+    "myntra": "com.myntra.MyntraApp",
+    "swiggy": "in.swiggy.SwiggyApp",
+    "zomato": "com.zomato.Zomato",
+    "walmart": "com.walmart.customer",
+    "target": "com.target.mobile",
+    "ebay": "com.ebay.iphone",
+    "etsy": "com.etsy.etsyforios",
 }
 
 APK_CACHE_DIR = Path.home() / ".ux-journey-scraper" / "apks"
@@ -73,8 +77,12 @@ class AppProvisioner:
     # Public API
     # ------------------------------------------------------------------
 
-    async def provision(self, brand_name: str, platform_type: str,
-                        appium_server: str = "http://localhost:4723"):
+    async def provision(
+        self,
+        brand_name: str,
+        platform_type: str,
+        appium_server: str = "http://localhost:4723",
+    ):
         """
         Full auto-provisioning pipeline.
 
@@ -187,6 +195,7 @@ class AppProvisioner:
     async def _ensure_appium(self, server_url: str):
         """Start Appium if not already running."""
         import requests as _req
+
         status_url = f"{server_url.rstrip('/')}/status"
         try:
             _req.get(status_url, timeout=3)
@@ -197,9 +206,7 @@ class AppProvisioner:
 
         appium_bin = shutil.which("appium")
         if not appium_bin:
-            raise RuntimeError(
-                "Appium not found. Install with: npm install -g appium"
-            )
+            raise RuntimeError("Appium not found. Install with: npm install -g appium")
 
         port = server_url.split(":")[-1].rstrip("/")
         click_log(f"Starting Appium on port {port}...")
@@ -239,8 +246,15 @@ class AppProvisioner:
         click_log(f"Starting emulator: {avd}")
         env = self._android_env()
         subprocess.Popen(
-            [self._emulator, "-avd", avd, "-dns-server", "8.8.8.8",
-             "-no-snapshot-save", "-no-boot-anim"],
+            [
+                self._emulator,
+                "-avd",
+                avd,
+                "-dns-server",
+                "8.8.8.8",
+                "-no-snapshot-save",
+                "-no-boot-anim",
+            ],
             env=env,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -254,7 +268,9 @@ class AppProvisioner:
         for _ in range(60):
             result = subprocess.run(
                 [self._adb, "shell", "getprop", "sys.boot_completed"],
-                capture_output=True, text=True, env=env,
+                capture_output=True,
+                text=True,
+                env=env,
             )
             if result.stdout.strip() == "1":
                 await asyncio.sleep(2)  # Extra settle time
@@ -266,7 +282,9 @@ class AppProvisioner:
     def _connected_device(self) -> Optional[str]:
         """Return device serial if a device/emulator is connected."""
         result = subprocess.run(
-            [self._adb, "devices"], capture_output=True, text=True,
+            [self._adb, "devices"],
+            capture_output=True,
+            text=True,
             env=self._android_env(),
         )
         for line in result.stdout.splitlines()[1:]:
@@ -278,19 +296,24 @@ class AppProvisioner:
         """List available AVDs."""
         result = subprocess.run(
             [self._emulator, "-list-avds"],
-            capture_output=True, text=True, env=self._android_env(),
+            capture_output=True,
+            text=True,
+            env=self._android_env(),
         )
         return [l.strip() for l in result.stdout.splitlines() if l.strip()]
 
     def _booted_simulator_udid(self) -> Optional[str]:
         """Return UDID of the first booted iOS simulator."""
         import shlex
+
         try:
             result = subprocess.run(
                 ["xcrun", "simctl", "list", "devices", "booted", "--json"],
-                capture_output=True, text=True,
+                capture_output=True,
+                text=True,
             )
             import json
+
             data = json.loads(result.stdout)
             for runtime, devices in data.get("devices", {}).items():
                 for d in devices:
@@ -307,7 +330,9 @@ class AppProvisioner:
     def _is_installed_android(self, package: str) -> bool:
         result = subprocess.run(
             [self._adb, "shell", "pm", "list", "packages", package],
-            capture_output=True, text=True, env=self._android_env(),
+            capture_output=True,
+            text=True,
+            env=self._android_env(),
         )
         return package in result.stdout
 
@@ -318,7 +343,9 @@ class AppProvisioner:
         else:
             result = subprocess.run(
                 [self._adb, "install", "-r", "-t", apk_path],
-                capture_output=True, text=True, env=self._android_env(),
+                capture_output=True,
+                text=True,
+                env=self._android_env(),
                 timeout=180,
             )
             if "Success" not in result.stdout and "Success" not in result.stderr:
@@ -328,8 +355,8 @@ class AppProvisioner:
 
     def _install_xapk(self, xapk_path: str):
         """Extract and install an XAPK/APKM bundle using adb install-multiple."""
-        import zipfile
         import tempfile
+        import zipfile
 
         extract_dir = Path(tempfile.mkdtemp(prefix="ux_xapk_"))
         try:
@@ -342,10 +369,15 @@ class AppProvisioner:
                 raise RuntimeError(f"No APK files found inside {xapk_path}")
 
             click_log(f"Installing {len(apk_files)} APK split(s)...")
-            cmd = [self._adb, "install-multiple", "-r", "-t"] + [str(f) for f in apk_files]
+            cmd = [self._adb, "install-multiple", "-r", "-t"] + [
+                str(f) for f in apk_files
+            ]
             result = subprocess.run(
-                cmd, capture_output=True, text=True,
-                env=self._android_env(), timeout=300,
+                cmd,
+                capture_output=True,
+                text=True,
+                env=self._android_env(),
+                timeout=300,
             )
             if "Success" not in result.stdout and "Success" not in result.stderr:
                 raise RuntimeError(
@@ -353,14 +385,24 @@ class AppProvisioner:
                 )
         finally:
             import shutil as _shutil
+
             _shutil.rmtree(extract_dir, ignore_errors=True)
 
     def _detect_main_activity(self, package: str) -> Optional[str]:
         """Auto-detect the main launcher activity."""
         result = subprocess.run(
-            [self._adb, "shell", "cmd", "package", "resolve-activity",
-             "--brief", package],
-            capture_output=True, text=True, env=self._android_env(),
+            [
+                self._adb,
+                "shell",
+                "cmd",
+                "package",
+                "resolve-activity",
+                "--brief",
+                package,
+            ],
+            capture_output=True,
+            text=True,
+            env=self._android_env(),
         )
         for line in result.stdout.splitlines():
             if "/" in line and package in line:
@@ -402,7 +444,12 @@ class AppProvisioner:
     async def _download_via_apkeep(self, package: str, output_path: str) -> str:
         """Download APK/XAPK using apkeep CLI."""
         proc = await asyncio.create_subprocess_exec(
-            "apkeep", "-a", package, "-d", "apk-pure", str(APK_CACHE_DIR),
+            "apkeep",
+            "-a",
+            package,
+            "-d",
+            "apk-pure",
+            str(APK_CACHE_DIR),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -415,9 +462,7 @@ class AppProvisioner:
             candidate = APK_CACHE_DIR / f"{package}{ext}"
             if candidate.exists():
                 return str(candidate)
-        raise RuntimeError(
-            f"apkeep finished but no APK found in {APK_CACHE_DIR}"
-        )
+        raise RuntimeError(f"apkeep finished but no APK found in {APK_CACHE_DIR}")
 
     # ------------------------------------------------------------------
     # Discovery
@@ -431,6 +476,7 @@ class AppProvisioner:
         # Try google-play-scraper live search
         try:
             from google_play_scraper import search
+
             results = search(brand, n_hits=1, lang="en", country="in")
             if results:
                 package = results[0]["appId"]
@@ -462,6 +508,7 @@ class AppProvisioner:
     def _android_env(self) -> dict:
         """Build environment dict with ANDROID_HOME set."""
         import os
+
         env = os.environ.copy()
         android_home = str(Path.home() / "Library" / "Android" / "sdk")
         env["ANDROID_HOME"] = android_home
@@ -469,8 +516,7 @@ class AppProvisioner:
         env["PATH"] = (
             f"{android_home}/platform-tools:"
             f"{android_home}/emulator:"
-            f"{android_home}/tools:"
-            + env.get("PATH", "")
+            f"{android_home}/tools:" + env.get("PATH", "")
         )
         return env
 
@@ -479,6 +525,7 @@ def click_log(msg: str):
     """Print a log message (uses click if available)."""
     try:
         import click
+
         click.echo(f"  {msg}")
     except ImportError:
         print(f"  {msg}")

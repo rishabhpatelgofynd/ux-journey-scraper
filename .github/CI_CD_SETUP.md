@@ -7,6 +7,7 @@ The UX Journey Scraper project has a comprehensive CI/CD pipeline that automatic
 ## Pipeline Components
 
 ### 1. Linting (`lint` job)
+
 - **Black** - Code formatting check (line length: 100)
 - **isort** - Import sorting validation
 - **flake8** - Python linting and style checks
@@ -14,6 +15,7 @@ The UX Journey Scraper project has a comprehensive CI/CD pipeline that automatic
 **Triggers:** All pushes and pull requests to `main` or `develop`
 
 ### 2. Testing (`test` job)
+
 - Runs on Python versions: 3.9, 3.10, 3.11, 3.12
 - Executes unit tests (non-integration tests)
 - Executes integration tests (continue-on-error for dependencies)
@@ -22,6 +24,7 @@ The UX Journey Scraper project has a comprehensive CI/CD pipeline that automatic
 **Triggers:** All pushes and pull requests to `main` or `develop`
 
 ### 3. Coverage (`coverage` job)
+
 - Generates code coverage reports
 - Uploads to Codecov for tracking
 - Targets 70% minimum coverage
@@ -30,6 +33,7 @@ The UX Journey Scraper project has a comprehensive CI/CD pipeline that automatic
 **Triggers:** All pushes and pull requests to `main` or `develop`
 
 ### 4. Build (`build` job)
+
 - Builds Python distribution packages (wheel + sdist)
 - Validates packages with `twine check`
 - Uploads build artifacts (7-day retention)
@@ -38,6 +42,7 @@ The UX Journey Scraper project has a comprehensive CI/CD pipeline that automatic
 **Triggers:** All pushes and pull requests to `main` or `develop`
 
 ### 5. Publish (`publish` job)
+
 - Publishes to PyPI using trusted publishing
 - Only runs on GitHub releases
 - Uses PyPI's trusted publisher workflow (no API tokens needed)
@@ -94,20 +99,25 @@ make coverage
 ## Configuration Files
 
 ### `.github/workflows/ci.yml`
+
 Main CI/CD workflow definition
 
 ### `pyproject.toml`
+
 - Build system configuration
 - Black, isort, pytest, coverage settings
 - Package metadata
 
 ### `.flake8`
+
 Flake8 linting configuration
 
 ### `.codecov.yml`
+
 Code coverage thresholds and reporting
 
 ### `Makefile`
+
 Development convenience commands
 
 ## Workflow Triggers
@@ -136,7 +146,7 @@ For production use, configure branch protection on `main`:
 
 ### Prerequisites
 
-1. **Create PyPI Account:** https://pypi.org/account/register/
+1. **Create PyPI Account:** <https://pypi.org/account/register/>
 
 2. **Configure Trusted Publishing:**
    - Go to PyPI → Account → Publishing
@@ -147,6 +157,7 @@ For production use, configure branch protection on `main`:
    - Environment: (leave empty)
 
 3. **Create GitHub Release:**
+
    ```bash
    # Tag version
    git tag -a v0.1.0 -m "Release v0.1.0"
@@ -171,21 +182,25 @@ Add to README.md:
 ## Troubleshooting
 
 ### Tests Failing Locally but Pass in CI
+
 - Ensure you're using the same Python version
 - Check virtual environment isolation
 - Verify all dev dependencies are installed
 
 ### Linting Failures
+
 - Run `make format` to auto-fix formatting issues
 - Check `.flake8` for ignored rules
 - Ensure isort profile matches black
 
 ### Coverage Drops Below Threshold
+
 - Add tests for new functionality
 - Check `.codecov.yml` for coverage targets
 - Review coverage report: `make coverage`
 
 ### PyPI Publishing Fails
+
 - Verify trusted publisher configuration
 - Check version number is not already published
 - Ensure release is properly created on GitHub

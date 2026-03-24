@@ -11,37 +11,37 @@ Covered:
 - AppiumCrawler         (end-to-end crawl orchestration)
 - NativeAppConfig / PlatformConfig native variants
 """
+
 import asyncio
 import base64
 import io
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from PIL import Image
-
 from ux_journey_scraper.config.scrape_config import (
+    AuthConfig,
+    CrawlerConfig,
     NativeAppConfig,
     PlatformConfig,
     ScrapeConfig,
-    AuthConfig,
-    CrawlerConfig,
 )
+from ux_journey_scraper.core.appium_crawler import AppiumCrawler
+from ux_journey_scraper.core.appium_session import AppiumSession
+from ux_journey_scraper.core.gesture_engine import GestureEngine
 from ux_journey_scraper.core.mobile_state_registry import MobileStateRegistry
 from ux_journey_scraper.core.native_element_detector import (
     NativeElement,
     NativeElementDetector,
 )
-from ux_journey_scraper.core.gesture_engine import GestureEngine
-from ux_journey_scraper.core.appium_session import AppiumSession
-from ux_journey_scraper.core.appium_crawler import AppiumCrawler
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_png_b64(color=(255, 0, 0), size=(10, 10)) -> str:
     """Return a base64-encoded PNG with a solid colour."""
@@ -84,6 +84,7 @@ def _make_scrape_config(platform: PlatformConfig) -> ScrapeConfig:
 # ---------------------------------------------------------------------------
 # NativeAppConfig & PlatformConfig
 # ---------------------------------------------------------------------------
+
 
 class TestNativeAppConfig:
     """Config-level tests for native platform support."""
@@ -144,6 +145,7 @@ class TestNativeAppConfig:
 # ---------------------------------------------------------------------------
 # MobileStateRegistry
 # ---------------------------------------------------------------------------
+
 
 class TestMobileStateRegistry:
     """Tests for perceptual-hash based screen deduplication."""
@@ -217,6 +219,7 @@ class TestMobileStateRegistry:
 # ---------------------------------------------------------------------------
 # NativeElementDetector
 # ---------------------------------------------------------------------------
+
 
 class TestNativeElementDetector:
     """Tests for accessibility tree element detection and scoring."""
@@ -337,6 +340,7 @@ class TestNativeElementDetector:
 # GestureEngine
 # ---------------------------------------------------------------------------
 
+
 class TestGestureEngine:
     """Tests for touch gesture primitives."""
 
@@ -402,6 +406,7 @@ class TestGestureEngine:
 # AppiumSession
 # ---------------------------------------------------------------------------
 
+
 class TestAppiumSession:
     """Tests for capability building and server validation."""
 
@@ -465,6 +470,7 @@ class TestAppiumSession:
 
     def test_validate_server_raises_on_connection_error(self):
         import requests
+
         session = AppiumSession()
         with patch("requests.get", side_effect=requests.exceptions.ConnectionError):
             with pytest.raises(RuntimeError, match="Cannot connect to Appium"):
@@ -472,6 +478,7 @@ class TestAppiumSession:
 
     def test_validate_server_raises_on_timeout(self):
         import requests
+
         session = AppiumSession()
         with patch("requests.get", side_effect=requests.exceptions.Timeout):
             with pytest.raises(RuntimeError, match="did not respond"):
@@ -491,11 +498,10 @@ class TestAppiumSession:
         platform = _native_android_platform()
         mock_driver = MagicMock()
 
-        with patch.object(session, "_validate_server"), \
-             patch(
-                "ux_journey_scraper.core.appium_session.appium_webdriver.Remote",
-                return_value=mock_driver,
-             ) as mock_remote:
+        with patch.object(session, "_validate_server"), patch(
+            "ux_journey_scraper.core.appium_session.appium_webdriver.Remote",
+            return_value=mock_driver,
+        ) as mock_remote:
             driver = session.create_driver(platform)
             assert driver is mock_driver
             kwargs = mock_remote.call_args.kwargs
@@ -508,11 +514,10 @@ class TestAppiumSession:
         platform = _native_ios_platform()
         mock_driver = MagicMock()
 
-        with patch.object(session, "_validate_server"), \
-             patch(
-                "ux_journey_scraper.core.appium_session.appium_webdriver.Remote",
-                return_value=mock_driver,
-             ) as mock_remote:
+        with patch.object(session, "_validate_server"), patch(
+            "ux_journey_scraper.core.appium_session.appium_webdriver.Remote",
+            return_value=mock_driver,
+        ) as mock_remote:
             driver = session.create_driver(platform)
             kwargs = mock_remote.call_args.kwargs
             assert kwargs["command_executor"] == "http://localhost:4723"
@@ -523,15 +528,14 @@ class TestAppiumSession:
 # AppiumCrawler
 # ---------------------------------------------------------------------------
 
+
 class TestAppiumCrawler:
     """Integration-style tests using a fully mocked Appium driver."""
 
     def _make_mock_driver(self, screenshot_b64=None, contexts=None):
         """Build a mock Appium driver for crawl tests."""
         driver = MagicMock()
-        driver.get_screenshot_as_base64.return_value = (
-            screenshot_b64 or _make_png_b64()
-        )
+        driver.get_screenshot_as_base64.return_value = screenshot_b64 or _make_png_b64()
         driver.contexts = contexts or ["NATIVE_APP"]
         driver.find_elements.return_value = []
         driver.get_window_size.return_value = {"width": 390, "height": 844}
@@ -541,6 +545,7 @@ class TestAppiumCrawler:
         from ux_journey_scraper.core.app_architecture_detector import (
             ArchitectureDetectionResult,
         )
+
         return ArchitectureDetectionResult(
             architecture=arch_type,
             confidence=0.9,
@@ -709,9 +714,7 @@ class TestAppiumCrawler:
             crawler = AppiumCrawler(config, tmpdir, platform)
 
             # Build unique screenshots so dedup doesn't stop after 1 step
-            screenshots = [
-                _make_png_b64(color=(i * 40, 0, 0)) for i in range(5)
-            ]
+            screenshots = [_make_png_b64(color=(i * 40, 0, 0)) for i in range(5)]
             call_count = {"n": 0}
 
             def next_screenshot():

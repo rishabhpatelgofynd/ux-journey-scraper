@@ -1,4 +1,5 @@
 # Phase 2 Plan: Native & Cross-Platform Mobile App Testing
+
 ## ux-journey-scraper v0.5.0 Roadmap
 
 > **Context**: Phase 1 (v0.4.0) ships web emulation — Playwright + viewport/UA spoofing for desktop, mobile, and tablet.
@@ -57,6 +58,7 @@ This maps directly onto what `app_architecture_detector.py` should become: not a
 ### Static Analysis (before launching the app)
 
 **Android APK:**
+
 ```
 unzip app.apk → inspect contents:
   lib/arm64-v8a/libflutter.so        → Flutter
@@ -67,6 +69,7 @@ unzip app.apk → inspect contents:
 ```
 
 **iOS IPA:**
+
 ```
 unzip app.ipa → inspect Payload/App.app/:
   Frameworks/Flutter.framework       → Flutter
@@ -88,7 +91,7 @@ contexts = driver.contexts
 # with synthetic labels instead of real UIAccessibility types
 ```
 
-### `app_architecture_detector.py` — what it should become:
+### `app_architecture_detector.py` — what it should become
 
 ```python
 class AppArchitectureDetector:
@@ -119,12 +122,14 @@ class AppType(Enum):
 **Why first**: Ionic/Capacitor apps are WebViews. Once Appium launches the app and switches context to the WebView, the automation is nearly identical to Phase 1 Playwright automation. Most of the existing code (`element_intelligence.py`, `form_filler.py`, `page_readiness.py`) can be reused.
 
 **What needs building:**
+
 - Appium session setup (Android: `UIAutomator2` driver, iOS: `XCTest` driver)
 - Launch app → detect WebView context → switch to it
 - Thin adapter that wraps Appium's WebView as a Playwright-compatible interface
 - Or: use `appium-webdriverio` / CDP attach to avoid writing a new abstraction
 
 **Touch point differences to handle:**
+
 - `swipe` to scroll (replace `scrollIntoView` with touch drag)
 - `long press` for context menus
 - `pull-to-refresh` if the app uses it as a navigation gesture
@@ -138,6 +143,7 @@ class AppType(Enum):
 React Native (both old and new arch) exposes a **native accessibility tree**, so Appium's UIAutomator2 and XCTest drivers work. Elements are real native views.
 
 **What needs building:**
+
 - `ReactNativeCrawler` class (extends or mirrors `AutonomousCrawler` interface)
 - Appium session setup with appropriate capabilities
 - Element detection via accessibility tree instead of DOM queries
@@ -146,6 +152,7 @@ React Native (both old and new arch) exposes a **native accessibility tree**, so
 - State deduplication: screenshot hash + element tree hash (no URL to deduplicate on)
 
 **Key difference from web crawling:**
+
 - No URL to track state — must use screen content hashing
 - Navigation is gesture-based (back swipe, bottom tab tap, drawer open) not URL-based
 - Deep links can be used as seed "URLs" (`app://screen/name`)
@@ -161,6 +168,7 @@ React Native (both old and new arch) exposes a **native accessibility tree**, so
 Flutter draws its own pixels. There is no UIKit/Android View hierarchy. Appium's standard drivers see nothing meaningful.
 
 **Options:**
+
 1. **Appium Flutter Driver**: Uses Flutter's semantics bridge (accessibility must be enabled in the app build). Works but requires a debug/profile build of the app.
 2. **Maestro** (framework-agnostic, YAML-based): Interacts with accessibility tree on native/RN, and Flutter semantics on Flutter. Becoming the community standard for Flutter testing.
 3. **flutter_test / integration_test**: Official Flutter testing packages, but they require embedding test code inside the app — not compatible with external black-box crawling.
@@ -188,6 +196,7 @@ flow = {
 Appium's standard XCTest (iOS) and UIAutomator2 (Android) drivers work for pure native apps. Same approach as React Native minus the JS-layer complications.
 
 **What's unique:**
+
 - Platform-specific interaction patterns (iOS: navigation controller back button; Android: hardware back key)
 - OS-level gestures that cannot be blocked (swipe from screen edge to go back on iOS)
 - Permission dialogs (camera, location, notifications) interrupt flow — must be dismissed
@@ -287,6 +296,7 @@ pip install ux-journey-scraper[native]
 ```
 
 **External requirements (not pip-installable):**
+
 - **Appium server**: `npm install -g appium && appium driver install uiautomator2 xcuitest`
 - **Android**: Android SDK, ADB, AVD Manager (or a real device)
 - **iOS**: Xcode, iOS Simulator (macOS only), valid provisioning profile for real devices

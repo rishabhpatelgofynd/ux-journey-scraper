@@ -4,6 +4,7 @@ Priority queue-based navigation engine for autonomous crawling.
 Uses a max-heap to prioritize high-value actions (e.g., "Add to Cart" before "Learn More").
 Integrates with StateRegistry to avoid duplicate states.
 """
+
 import heapq
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
@@ -173,9 +174,7 @@ class NavigationQueue:
             Priority score (0-100)
         """
         # Combine all text fields for keyword matching
-        combined_text = " ".join(
-            [element_text, element_type, href, aria_label]
-        ).lower()
+        combined_text = " ".join([element_text, element_type, href, aria_label]).lower()
 
         # Check for keyword matches
         max_priority = 0
@@ -261,9 +260,7 @@ class NavigationQueue:
         heapq.heapify(self.queue)
 
         # Rebuild queued_actions set
-        self.queued_actions = {
-            self._action_signature(action) for action in self.queue
-        }
+        self.queued_actions = {self._action_signature(action) for action in self.queue}
 
         removed = original_size - len(self.queue)
         return removed

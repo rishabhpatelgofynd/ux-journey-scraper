@@ -5,6 +5,7 @@ This guide walks through publishing the UX Journey Scraper package to PyPI.
 ## Prerequisites
 
 Before publishing, ensure:
+
 - ✅ All tests pass (`pytest tests/`)
 - ✅ Code is formatted (`black . && isort .`)
 - ✅ Linting passes (`flake8 .`)
@@ -16,7 +17,7 @@ Before publishing, ensure:
 
 ### 1.1 Register on PyPI
 
-1. Go to https://pypi.org/account/register/
+1. Go to <https://pypi.org/account/register/>
 2. Fill in:
    - Username: `resabh` (or your preferred username)
    - Email: `rp87704@gmail.com`
@@ -25,7 +26,7 @@ Before publishing, ensure:
 
 ### 1.2 Enable Two-Factor Authentication (Recommended)
 
-1. Go to https://pypi.org/manage/account/
+1. Go to <https://pypi.org/manage/account/>
 2. Click "Add 2FA" under "Two Factor Authentication"
 3. Choose TOTP app (Google Authenticator, Authy, etc.)
 4. Scan QR code and enter verification code
@@ -41,7 +42,7 @@ Trusted publishing allows GitHub Actions to publish to PyPI without API tokens.
 
 ### 2.1 Add Trusted Publisher on PyPI
 
-1. Go to https://pypi.org/manage/account/publishing/
+1. Go to <https://pypi.org/manage/account/publishing/>
 2. Click "Add a new pending publisher"
 3. Fill in:
    - **PyPI Project Name:** `ux-journey-scraper`
@@ -79,6 +80,7 @@ publish:
 Update version in **both** files:
 
 **pyproject.toml:**
+
 ```toml
 [project]
 name = "ux-journey-scraper"
@@ -86,6 +88,7 @@ version = "0.1.0"  # Change to new version
 ```
 
 **setup.py:**
+
 ```python
 setup(
     name="ux-journey-scraper",
@@ -178,7 +181,7 @@ See [CHANGELOG.md](CHANGELOG.md) for full details."
 
 #### Option B: Using GitHub Web Interface
 
-1. Go to https://github.com/resabh/ux-journey-scraper/releases/new
+1. Go to <https://github.com/resabh/ux-journey-scraper/releases/new>
 2. Fill in:
    - **Tag version:** `v0.1.0` (select existing tag)
    - **Release title:** `UX Journey Scraper v0.1.0`
@@ -188,7 +191,7 @@ See [CHANGELOG.md](CHANGELOG.md) for full details."
 
 ### 4.3 Monitor CI/CD Pipeline
 
-1. Go to https://github.com/resabh/ux-journey-scraper/actions
+1. Go to <https://github.com/resabh/ux-journey-scraper/actions>
 2. Watch the "CI/CD Pipeline" workflow
 3. Verify all jobs pass:
    - ✅ Lint Code
@@ -203,7 +206,7 @@ The publish job will automatically upload to PyPI.
 
 ### 5.1 Check PyPI Package Page
 
-1. Go to https://pypi.org/project/ux-journey-scraper/
+1. Go to <https://pypi.org/project/ux-journey-scraper/>
 2. Verify:
    - Package name and version are correct
    - README.md is displayed
@@ -245,6 +248,7 @@ print("✅ Package imported successfully!")
 ```
 
 Run it:
+
 ```bash
 python test_package.py
 ```
@@ -273,6 +277,7 @@ Add PyPI badges:
 ### 6.2 Announce Release
 
 Consider announcing the release on:
+
 - GitHub Discussions
 - Twitter/X
 - Reddit (r/Python, r/webdev, r/userexperience)
@@ -282,6 +287,7 @@ Consider announcing the release on:
 ### 6.3 Monitor Issues
 
 Watch for:
+
 - Installation issues
 - Bug reports
 - Feature requests
@@ -293,7 +299,7 @@ If you prefer not to use trusted publishing:
 
 ### Create API Token
 
-1. Go to https://pypi.org/manage/account/token/
+1. Go to <https://pypi.org/manage/account/token/>
 2. Click "Add API token"
 3. Token name: `ux-journey-scraper-publish`
 4. Scope: "Project: ux-journey-scraper"
@@ -323,6 +329,7 @@ Modify `.github/workflows/ci.yml`:
 ### "File already exists" Error
 
 If you try to upload the same version twice:
+
 - Bump the version number
 - Delete and recreate the tag
 - Create a new release

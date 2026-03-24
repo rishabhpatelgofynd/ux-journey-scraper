@@ -3,9 +3,10 @@ Proxy IP rotation manager.
 
 Manages proxy IP rotation across visit sessions for anti-detection.
 """
-import os
+
 import logging
-from typing import Optional, List, Dict
+import os
+from typing import Dict, List, Optional
 
 from ..config.scrape_config import ProxySettings
 
@@ -75,7 +76,9 @@ class ProxyRotator:
         proxy = self._pool[self._current_index % len(self._pool)]
         self._current_index += 1
 
-        logger.debug(f"Next proxy: {self._sanitize_url(proxy)} (index {self._current_index - 1})")
+        logger.debug(
+            f"Next proxy: {self._sanitize_url(proxy)} (index {self._current_index - 1})"
+        )
 
         return {"server": proxy}
 

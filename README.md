@@ -12,6 +12,7 @@ A powerful tool for UX designers, developers, and QA teams to autonomously captu
 ## 🎯 What It Does
 
 ### Core Features (v0.5.0)
+
 - **🤖 Autonomous Crawling**: Intelligently navigates websites without manual intervention
 - **🎯 Smart Element Detection**: Finds ALL clickables (buttons, links, onclick handlers, ARIA roles)
 - **📸 Journey Capture**: Records complete user flows with screenshots at each step
@@ -114,6 +115,7 @@ ux-journey record \
 ## 💡 Use Cases
 
 ### 1. **Competitor Analysis**
+
 Capture competitor websites to understand user flows and patterns.
 
 ```bash
@@ -121,6 +123,7 @@ ux-journey crawl --config competitor-config.yaml --output-dir competitor_journey
 ```
 
 ### 2. **User Flow Documentation**
+
 Document user flows with screenshots for design/QA teams.
 
 ```bash
@@ -128,6 +131,7 @@ ux-journey crawl --config mysite-config.yaml --output-dir user_flows/
 ```
 
 ### 3. **Pre-Launch Testing**
+
 Capture staging sites before launch.
 
 ```bash
@@ -135,6 +139,7 @@ ux-journey crawl --config staging-config.yaml --output-dir staging_test/
 ```
 
 ### 4. **QA Automation**
+
 Automated journey capture for regression testing.
 
 ```bash
@@ -144,6 +149,7 @@ ux-journey crawl --config qa-config.yaml --output-dir qa_snapshots/
 ## 🛠️ Features
 
 ### Journey Recording
+
 - ✅ Autonomous crawling with priority queue
 - ✅ Multi-step journey capture
 - ✅ Automatic screenshot on each navigation
@@ -154,6 +160,7 @@ ux-journey crawl --config qa-config.yaml --output-dir qa_snapshots/
 - ✅ Session management and auth support
 
 ### Accessibility
+
 - ✅ WCAG 2.1 Level A/AA validation
 - ✅ Color contrast analysis
 - ✅ Keyboard navigation checks
@@ -161,12 +168,14 @@ ux-journey crawl --config qa-config.yaml --output-dir qa_snapshots/
 - ✅ ARIA attributes validation
 
 ### Privacy & Security
+
 - ✅ PII blur in screenshots (emails, credit cards, names)
 - ✅ robots.txt respect (with user confirmation)
 - ✅ Rate limiting
 - ✅ No data collection or tracking
 
 ### Reports
+
 - ✅ Interactive HTML reports
 - ✅ Annotated screenshots with issue markers
 - ✅ JSON export for automation
@@ -241,7 +250,6 @@ Options:
   --respect-robots         Check robots.txt (default: true)
   --headless              Run in headless mode (default: false)
 ```
-
 
 ## 🔧 Python API
 
@@ -327,6 +335,7 @@ for step in journey.steps:
 ## 🛣️ Roadmap
 
 ### v0.4.0 (Current) - Multi-Platform Web Crawling
+
 - ✅ Autonomous crawling with priority queue
 - ✅ Desktop web journey recording
 - ✅ Mobile viewport emulation (iPhone 14 Pro)
@@ -340,6 +349,7 @@ for step in journey.steps:
 - ✅ Stealth mode (anti-bot detection)
 
 ### v0.5.0 (Next) - Native App Testing (Appium)
+
 - ⬜ Native Android app crawling (UiAutomator2)
 - ⬜ Native iOS app crawling (XCUITest, macOS only)
 - ⬜ Appium session setup and element detection via accessibility tree
@@ -348,6 +358,7 @@ for step in journey.steps:
   **Requirements**: `pip install Appium-Python-Client`, Android SDK + ADB or Xcode + iOS Simulator
 
 ### Future Enhancements
+
 - ⬜ Multi-page site mapping
 - ⬜ CAPTCHA handling improvements
 - ⬜ Visual regression detection
@@ -355,6 +366,7 @@ for step in journey.steps:
 - ⬜ CI/CD integration
 
 ### Analysis Features → Moved to BayMAAR
+
 - UX guidelines analysis is now in the separate BayMAAR Analysis Engine (private)
 - This package remains a pure journey capture tool
 

@@ -7,6 +7,7 @@ Supports:
 - Auth wall detection
 - Mid-crawl auth recovery
 """
+
 import asyncio
 import json
 import logging
@@ -112,7 +113,9 @@ class AuthManager:
                     """,
                     session_data["localStorage"],
                 )
-                logger.debug(f"Loaded {len(session_data['localStorage'])} localStorage items")
+                logger.debug(
+                    f"Loaded {len(session_data['localStorage'])} localStorage items"
+                )
 
             return True
 
@@ -178,7 +181,8 @@ class AuthManager:
                     'input[id*="user"]',
                     'input[id*="email"]',
                 ],
-                self.config.credentials.get("username") or self.config.credentials.get("email", ""),
+                self.config.credentials.get("username")
+                or self.config.credentials.get("email", ""),
             )
 
             if not username_filled:

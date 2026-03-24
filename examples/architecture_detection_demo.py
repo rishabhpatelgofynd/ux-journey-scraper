@@ -4,6 +4,7 @@ App Architecture Detection Demo
 Demonstrates detection of native, WebView, or hybrid mobile app architecture.
 Requires Appium setup to run with real apps.
 """
+
 import asyncio
 
 
@@ -41,7 +42,7 @@ async def demo_architecture_detection():
 
         try:
             # Connect to Appium server
-            driver = webdriver.Remote('http://localhost:4723', options=options)
+            driver = webdriver.Remote("http://localhost:4723", options=options)
 
             # Detect architecture
             detector = AppArchitectureDetector()
@@ -55,12 +56,12 @@ async def demo_architecture_detection():
             print()
 
             print("Evidence:")
-            for evidence in result['evidence']:
+            for evidence in result["evidence"]:
                 print(f"  • {evidence}")
             print()
 
             print("Testing Implications:")
-            for implication in result['implications']:
+            for implication in result["implications"]:
                 print(f"  → {implication}")
 
             driver.quit()
@@ -92,54 +93,54 @@ async def demo_simulated():
 
     scenarios = [
         {
-            'app': 'Nike Android App',
-            'architecture': 'native',
-            'confidence': 0.95,
-            'evidence': [
-                'Context analysis indicates native (score: 1.00)',
-                'DOM accessibility indicates native (score: 0.80)',
-                'View hierarchy indicates native (score: 0.80)',
+            "app": "Nike Android App",
+            "architecture": "native",
+            "confidence": 0.95,
+            "evidence": [
+                "Context analysis indicates native (score: 1.00)",
+                "DOM accessibility indicates native (score: 0.80)",
+                "View hierarchy indicates native (score: 0.80)",
             ],
-            'implications': [
-                'Test all UX checks - fully native implementation',
-                'Performance likely optimal',
-                'Platform-specific UI patterns expected',
-                'No web version cross-reference needed'
-            ]
+            "implications": [
+                "Test all UX checks - fully native implementation",
+                "Performance likely optimal",
+                "Platform-specific UI patterns expected",
+                "No web version cross-reference needed",
+            ],
         },
         {
-            'app': 'Temu Android App',
-            'architecture': 'webview',
-            'confidence': 0.89,
-            'evidence': [
-                'Context analysis indicates webview (score: 0.90)',
-                'DOM accessibility indicates webview (score: 0.80)',
-                'JavaScript execution indicates webview (score: 0.70)',
+            "app": "Temu Android App",
+            "architecture": "webview",
+            "confidence": 0.89,
+            "evidence": [
+                "Context analysis indicates webview (score: 0.90)",
+                "DOM accessibility indicates webview (score: 0.80)",
+                "JavaScript execution indicates webview (score: 0.70)",
             ],
-            'implications': [
-                'Test all UX checks - UI interactions differ from web',
-                'Check if issues also exist on mobile web',
-                'Touch interactions may differ from web',
-                'Performance may be slower than native',
-                'Fixing web version may fix app version'
-            ]
+            "implications": [
+                "Test all UX checks - UI interactions differ from web",
+                "Check if issues also exist on mobile web",
+                "Touch interactions may differ from web",
+                "Performance may be slower than native",
+                "Fixing web version may fix app version",
+            ],
         },
         {
-            'app': 'Amazon Android App',
-            'architecture': 'hybrid',
-            'confidence': 0.76,
-            'evidence': [
-                'Context analysis indicates hybrid (score: 0.90)',
-                'DOM accessibility indicates webview (score: 0.80)',
-                'View hierarchy indicates hybrid (score: 0.60)',
+            "app": "Amazon Android App",
+            "architecture": "hybrid",
+            "confidence": 0.76,
+            "evidence": [
+                "Context analysis indicates hybrid (score: 0.90)",
+                "DOM accessibility indicates webview (score: 0.80)",
+                "View hierarchy indicates hybrid (score: 0.60)",
             ],
-            'implications': [
-                'Test all UX checks - mixed implementation',
-                'Some screens native, some WebView',
-                'Test transitions between native and WebView',
-                'Performance varies by screen type'
-            ]
-        }
+            "implications": [
+                "Test all UX checks - mixed implementation",
+                "Some screens native, some WebView",
+                "Test transitions between native and WebView",
+                "Performance varies by screen type",
+            ],
+        },
     ]
 
     for scenario in scenarios:
@@ -149,12 +150,12 @@ async def demo_simulated():
         print()
 
         print("Evidence:")
-        for evidence in scenario['evidence']:
+        for evidence in scenario["evidence"]:
             print(f"  • {evidence}")
         print()
 
         print("Testing Implications:")
-        for implication in scenario['implications']:
+        for implication in scenario["implications"]:
             print(f"  → {implication}")
 
         print()
@@ -182,11 +183,11 @@ async def demo_detection_workflow():
         result = await discover_platforms("Target")
 
         print(f"✓ Discovered {len(result.platforms_available)} platforms for Target:")
-        if 'web' in result.platforms_available:
+        if "web" in result.platforms_available:
             print(f"   🌐 Web: {result.web_url}")
-        if 'android' in result.platforms_available:
+        if "android" in result.platforms_available:
             print(f"   🤖 Android: {result.android_package}")
-        if 'ios' in result.platforms_available:
+        if "ios" in result.platforms_available:
             print(f"   🍎 iOS: {result.ios_bundle_id}")
 
     except Exception as e:

@@ -12,6 +12,7 @@ Integrates:
 - Session splitting support
 - Cookie persistence
 """
+
 import asyncio
 import logging
 from datetime import datetime
@@ -19,21 +20,21 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
-from ux_journey_scraper.config.scrape_config import ScrapeConfig, PlatformConfig
+from ux_journey_scraper.config.scrape_config import PlatformConfig, ScrapeConfig
 from ux_journey_scraper.core.auth_manager import AuthManager
+from ux_journey_scraper.core.cookie_jar import CookieJar
 from ux_journey_scraper.core.element_intelligence import ElementIntelligence
 from ux_journey_scraper.core.form_filler import FormFiller
 from ux_journey_scraper.core.human_behaviour import HumanBehaviour
 from ux_journey_scraper.core.journey_recorder import Journey, JourneyStep
+from ux_journey_scraper.core.navigation_behaviour import NavigationBehaviour
 from ux_journey_scraper.core.navigation_queue import NavigationAction, NavigationQueue
 from ux_journey_scraper.core.page_analyzer import PageAnalyzer
 from ux_journey_scraper.core.page_readiness import PageReadinessEngine
 from ux_journey_scraper.core.screenshot_manager import ScreenshotManager
+from ux_journey_scraper.core.session_planner import VisitPlan
 from ux_journey_scraper.core.state_registry import StateRegistry
 from ux_journey_scraper.core.stealth_browser import create_stealth_browser
-from ux_journey_scraper.core.navigation_behaviour import NavigationBehaviour
-from ux_journey_scraper.core.cookie_jar import CookieJar
-from ux_journey_scraper.core.session_planner import VisitPlan
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +129,10 @@ class AutonomousCrawler:
         # Initialize journey
         self.journey = Journey(
             start_url=self.config.base_url,
-            viewport=(self.platform.viewport["width"], self.platform.viewport["height"]),
+            viewport=(
+                self.platform.viewport["width"],
+                self.platform.viewport["height"],
+            ),
         )
 
         try:
@@ -156,7 +160,9 @@ class AutonomousCrawler:
                     raise RuntimeError("Authentication failed")
 
             # Initialize navigation queue
-            entry_url = self.visit_plan.entry_url if self.visit_plan else self.config.base_url
+            entry_url = (
+                self.visit_plan.entry_url if self.visit_plan else self.config.base_url
+            )
             self.nav_queue.add(
                 NavigationAction(
                     type="navigate",
@@ -226,7 +232,9 @@ class AutonomousCrawler:
                 # Check for auth wall
                 if await self.auth_manager.detect_auth_wall(self.page):
                     logger.warning("Auth wall detected, attempting recovery")
-                    recovered = await self.auth_manager.recover_from_auth_wall(self.page)
+                    recovered = await self.auth_manager.recover_from_auth_wall(
+                        self.page
+                    )
                     if not recovered:
                         logger.error("Auth recovery failed, skipping page")
                         continue
@@ -258,7 +266,9 @@ class AutonomousCrawler:
 
                     # If form filled, wait and capture updated state
                     await asyncio.sleep(1)
-                    if self.state_registry.is_new_state(current_url, await self.page.content()):
+                    if self.state_registry.is_new_state(
+                        current_url, await self.page.content()
+                    ):
                         await self._capture_screen()
                         self.pages_captured += 1
 
@@ -267,7 +277,9 @@ class AutonomousCrawler:
                 await self.nav_behaviour.maybe_backtrack(self.page)
 
                 # Revisit homepage occasionally
-                await self.nav_behaviour.maybe_revisit_home(self.page, self.config.base_url)
+                await self.nav_behaviour.maybe_revisit_home(
+                    self.page, self.config.base_url
+                )
 
                 # Scroll without clicking sometimes
                 await self.nav_behaviour.maybe_scroll_without_clicking(self.page)
@@ -323,7 +335,9 @@ class AutonomousCrawler:
         """
         try:
             if action.type == "navigate":
-                await self.page.goto(action.url, timeout=self.config.crawler.timeout_per_page_ms)
+                await self.page.goto(
+                    action.url, timeout=self.config.crawler.timeout_per_page_ms
+                )
                 return True
 
             elif action.type == "click":

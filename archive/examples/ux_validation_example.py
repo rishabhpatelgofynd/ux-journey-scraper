@@ -17,11 +17,16 @@ async def main():
 
     # Path to Baymard guidelines
     # Update this path to your actual guidelines file
-    guidelines_path = Path(__file__).parent.parent.parent.parent / "path/to/your/processed_guidelines.json"
+    guidelines_path = (
+        Path(__file__).parent.parent.parent.parent
+        / "path/to/your/processed_guidelines.json"
+    )
 
     if not guidelines_path.exists():
         print(f"❌ Guidelines file not found at: {guidelines_path}")
-        print("\nPlease update the guidelines_path in this script to point to your processed_guidelines.json")
+        print(
+            "\nPlease update the guidelines_path in this script to point to your processed_guidelines.json"
+        )
         return
 
     # Example: Record a journey with UX validation
@@ -36,9 +41,9 @@ async def main():
         guidelines_path=str(guidelines_path),
     )
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("UX VALIDATION JOURNEY RECORDING")
-    print("="*60)
+    print("=" * 60)
     print("\nThis will record a journey and validate each page against")
     print("Baymard Institute UX guidelines.\n")
 
@@ -57,9 +62,9 @@ async def main():
     output_file = "./journey_with_validation/journey_validated.json"
     journey.save(output_file)
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("JOURNEY SUMMARY")
-    print("="*60)
+    print("=" * 60)
     print(f"\nTotal steps: {len(journey.steps)}")
 
     # Print UX validation summary for each step
@@ -75,9 +80,9 @@ async def main():
             print(f"  Warnings: {len(val['warnings'])}")
             print(f"  Passed: {len(val['passed'])}")
 
-            if val['violations']:
+            if val["violations"]:
                 print(f"\n  Top Violations:")
-                for violation in val['violations'][:3]:
+                for violation in val["violations"][:3]:
                     print(f"    - #{violation['guideline_id']}: {violation['title']}")
                     print(f"      Severity: {violation['severity']}")
                     print(f"      {violation['details']}")

@@ -4,6 +4,7 @@ Touch gesture primitives for Appium-based mobile crawling.
 Provides tap, scroll, swipe, long press, pull-to-refresh, and keyboard dismissal
 for both Android (UiAutomator2) and iOS (XCUITest).
 """
+
 import logging
 import time
 
@@ -82,13 +83,20 @@ class GestureEngine:
             end_y = int(height * 0.6)
 
             if platform_type == "native_ios":
-                driver.execute_script("mobile: dragFromToForDuration", {
-                    "fromX": start_x, "fromY": start_y,
-                    "toX": start_x, "toY": end_y,
-                    "duration": 1.0,
-                })
+                driver.execute_script(
+                    "mobile: dragFromToForDuration",
+                    {
+                        "fromX": start_x,
+                        "fromY": start_y,
+                        "toX": start_x,
+                        "toY": end_y,
+                        "duration": 1.0,
+                    },
+                )
             else:
-                self._w3c_swipe(driver, start_x, start_y, start_x, end_y, duration_ms=800)
+                self._w3c_swipe(
+                    driver, start_x, start_y, start_x, end_y, duration_ms=800
+                )
         except Exception as exc:
             logger.debug(f"pull_to_refresh failed: {exc}")
 
@@ -104,9 +112,9 @@ class GestureEngine:
         try:
             from appium.webdriver.common.appiumby import AppiumBy
             from selenium.webdriver.common.action_chains import ActionChains
+            from selenium.webdriver.common.actions import interaction
             from selenium.webdriver.common.actions.action_builder import ActionBuilder
             from selenium.webdriver.common.actions.pointer_input import PointerInput
-            from selenium.webdriver.common.actions import interaction
 
             actions = ActionChains(driver)
             actions.w3c_actions = ActionBuilder(
@@ -183,9 +191,9 @@ class GestureEngine:
         """Generic W3C touch action swipe."""
         try:
             from selenium.webdriver.common.action_chains import ActionChains
+            from selenium.webdriver.common.actions import interaction
             from selenium.webdriver.common.actions.action_builder import ActionBuilder
             from selenium.webdriver.common.actions.pointer_input import PointerInput
-            from selenium.webdriver.common.actions import interaction
 
             actions = ActionChains(driver)
             actions.w3c_actions = ActionBuilder(

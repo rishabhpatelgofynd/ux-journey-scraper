@@ -166,6 +166,7 @@ The validator automatically detects page types from URLs and content:
 Currently implemented validation rules (more being added):
 
 ### Homepage Guidelines
+
 - **#237** - Feature a Broad Range of Product Types
 - **#238** - Use Bespoke Imagery and Design
 - **#240** - Be Cautious with Ads
@@ -173,6 +174,7 @@ Currently implemented validation rules (more being added):
 - **#957** - Avoid Autorotating Carousels (Mobile)
 
 ### Navigation Guidelines
+
 - **#266** - Make Category Headings Clickable
 - **#300** - Highlight Current Scope
 
@@ -233,6 +235,7 @@ When validation is enabled, you'll see real-time feedback:
 ```
 
 Compliance indicators:
+
 - 🟢 **80-100%** - Good compliance
 - 🟡 **60-79%** - Moderate compliance
 - 🔴 **0-59%** - Poor compliance
@@ -296,6 +299,7 @@ Validation adds minimal overhead:
 ### Validation not running
 
 Check:
+
 ```python
 # Ensure validators are available
 from ux_journey_scraper.validators import BaymardValidator
@@ -317,6 +321,7 @@ This is expected - only 8/289 guidelines are currently implemented. The system i
 ## Examples
 
 See `examples/` directory:
+
 - `ux_validation_example.py` - Standalone validation example
 - `config_with_ux_validation.yaml` - Configuration example
 
@@ -376,6 +381,7 @@ To contribute validation rules:
 ## Support
 
 For issues or questions:
+
 - Check `BAYMARD_DATA_LEVERAGE_STRATEGY.md` for overall strategy
 - Check `INTEGRATION_EXAMPLE.md` for code examples
 - Review `examples/` directory for working code

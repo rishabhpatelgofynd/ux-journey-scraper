@@ -28,6 +28,7 @@
 ### ✅ Safe Content (Included)
 
 **Code**:
+
 - Journey capture functionality
 - Browser automation (Playwright wrapper)
 - Screenshot handling
@@ -35,11 +36,13 @@
 - Generic utilities
 
 **Data**:
+
 - Test fixtures (mock journeys)
 - Example configurations (generic sites)
 - Sample screenshots (test data)
 
 **Documentation**:
+
 - User guides
 - API documentation
 - Examples using public sites
@@ -47,16 +50,19 @@
 ### ❌ Prohibited Content (Never Include)
 
 **Code**:
+
 - UX analysis algorithms based on proprietary research
 - Integration code requiring private dependencies
 - Hard-coded proprietary data or paths
 
 **Data**:
+
 - Baymard Institute guidelines or test criteria
 - Proprietary benchmark data
 - Assessment results from proprietary analysis
 
 **Documentation**:
+
 - References to proprietary data locations
 - Examples using proprietary guidelines
 - Integration guides for private systems
@@ -70,11 +76,13 @@
 #### March 20, 2026 - Major Privacy Cleanup ✅
 
 **Issues Found**:
+
 1. ❌ `UX_VALIDATION_INTEGRATION.md` - Referenced proprietary data paths
 2. ❌ `examples/ux_validation_example.py` - Hard-coded path to Baymard guidelines
 3. ⚠️ Multiple status docs mentioning UX validation features
 
 **Actions Taken**:
+
 1. ✅ Archived `UX_VALIDATION_INTEGRATION.md`
 2. ✅ Archived `examples/ux_validation_example.py`
 3. ✅ Archived 7 superseded status/progress documents
@@ -87,6 +95,7 @@
 #### Pre-March 2026 - Legacy Issues ⚠️
 
 **v0.1.0 - v0.2.0** (Early 2026):
+
 - ❌ Package included optional UX validation features
 - ❌ Examples referenced proprietary Baymard data paths
 - ❌ Documentation described integration with proprietary system
@@ -162,12 +171,14 @@ Integration via data files only.
 **Status**: ✅ **SAFE** (disabled by default)
 
 **Why It Exists**:
+
 - Integration hook for private BayMAAR system
 - Disabled by default (`ux_validation_enabled=False`)
 - No validators or data included in package
 - Requires external validator to function
 
 **Privacy Analysis**:
+
 ```python
 # In journey_recorder.py:
 def __init__(
@@ -183,6 +194,7 @@ def __init__(
 ```
 
 **Verdict**:
+
 - ✅ **COMPLIANT** - No privacy violation
 - Hook exists but is inactive
 - No proprietary data or code bundled
@@ -244,7 +256,7 @@ Run **BEFORE each PyPI release**:
 
 ## Privacy Guidelines for Contributors
 
-### DO:
+### DO
 
 ✅ Add journey capture features
 ✅ Improve crawling capabilities
@@ -253,7 +265,7 @@ Run **BEFORE each PyPI release**:
 ✅ Improve documentation (public)
 ✅ Use public sites in examples
 
-### DON'T:
+### DON'T
 
 ❌ Add UX analysis algorithms
 ❌ Include Baymard guidelines data
@@ -262,7 +274,7 @@ Run **BEFORE each PyPI release**:
 ❌ Reference proprietary systems in docs
 ❌ Include assessment/scoring code
 
-### Gray Areas (Ask First):
+### Gray Areas (Ask First)
 
 ⚠️ Adding integration hooks (like `ux_validation_enabled`)
 ⚠️ Generic utilities that could be used for analysis
@@ -292,12 +304,14 @@ Run **BEFORE each PyPI release**:
 ### If Privacy Violation Is Discovered
 
 **Immediate Actions**:
+
 1. Do NOT commit/push the violation
 2. Remove problematic files/code
 3. Notify package maintainers
 4. Document the issue
 
 **For Published Violations**:
+
 1. Yank the problematic version from PyPI immediately
 2. Remove proprietary content
 3. Publish fixed version
@@ -314,6 +328,7 @@ Run **BEFORE each PyPI release**:
 ## Certification
 
 **I certify that as of 2026-03-20**:
+
 - ✅ No proprietary Baymard Institute data is included
 - ✅ No hard-coded paths to proprietary data
 - ✅ All examples use public sites only
@@ -328,4 +343,3 @@ Run **BEFORE each PyPI release**:
 
 **Last Updated**: 2026-03-20
 **Next Audit**: Before next release
-

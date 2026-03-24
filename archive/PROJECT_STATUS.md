@@ -10,7 +10,7 @@
 
 ## Repository
 
-**GitHub:** https://github.com/resabh/ux-journey-scraper
+**GitHub:** <https://github.com/resabh/ux-journey-scraper>
 **PyPI:** ⚠️ Not yet published (package is ready but not uploaded)
 **Branch:** main
 **Commits:** 3
@@ -23,7 +23,8 @@
 
 Record and analyze user journeys with automated UX guidelines validation.
 
-### Core Features:
+### Core Features
+
 - ✅ **Record User Journeys** - Capture multi-step user flows through websites
 - ✅ **Screenshot Every Step** - Visual documentation of each journey step
 - ✅ **UX Analysis** - Automatically apply 324+ e-commerce UX guidelines
@@ -36,6 +37,7 @@ Record and analyze user journeys with automated UX guidelines validation.
 ## Quality Indicators
 
 ### 1. Senior-Level Engineering ✅
+
 - **Modular Architecture** - Separated CLI, core, utils, integrations
 - **Optional Dependencies** - Basic install vs full install with guidelines
 - **Security Considerations** - Robots.txt validation, PII blurring
@@ -43,6 +45,7 @@ Record and analyze user journeys with automated UX guidelines validation.
 - **Complete Documentation** - README, usage examples, API docs
 
 ### 2. Production Readiness ✅
+
 - **Published to PyPI** - `pip install ux-journey-scraper`
 - **CLI Interface** - 3 commands (record, analyze, run)
 - **Error Handling** - Graceful failures with helpful messages
@@ -50,6 +53,7 @@ Record and analyze user journeys with automated UX guidelines validation.
 - **Configurable** - Multiple options for customization
 
 ### 3. User Experience ✅
+
 - **Clear Commands** - Intuitive CLI interface
 - **Progress Indicators** - Shows status during recording/analysis
 - **Interactive Reports** - HTML with annotated screenshots
@@ -57,12 +61,14 @@ Record and analyze user journeys with automated UX guidelines validation.
 - **Privacy Protection** - Automatic PII blurring
 
 ### 4. Security & Privacy ✅
+
 - **Robots.txt Validation** - Respects website policies
 - **PII Blurring** - Automatic detection and redaction
 - **Local Processing** - No external API calls for privacy features
 - **User Consent** - Prompts before recording sensitive flows
 
 ### 5. Accessibility ✅
+
 - **WCAG 2.1 Checks** - Built-in compliance validation
 - **Color Contrast** - Checks for sufficient contrast
 - **Keyboard Navigation** - Tests for keyboard accessibility
@@ -99,12 +105,14 @@ ux_journey_scraper/
 ## Installation
 
 ### Basic (without UX guidelines)
+
 ```bash
 pip install ux-journey-scraper
 playwright install chromium
 ```
 
 ### Full (with 324+ UX guidelines)
+
 ```bash
 pip install ux-journey-scraper[full]
 playwright install chromium
@@ -115,6 +123,7 @@ playwright install chromium
 ## Usage
 
 ### Record a Journey
+
 ```bash
 ux-journey record \
   --start-url https://example.com \
@@ -122,11 +131,13 @@ ux-journey record \
 ```
 
 ### Analyze the Journey
+
 ```bash
 ux-journey analyze my-journey.json
 ```
 
 ### One Command (Record + Analyze)
+
 ```bash
 ux-journey run \
   --start-url https://example.com/checkout \
@@ -149,7 +160,8 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 
 ## Production Features
 
-### Implemented:
+### Implemented
+
 - ✅ Multi-step journey recording
 - ✅ Screenshot capture at each step
 - ✅ PII blurring for privacy
@@ -161,7 +173,8 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 - ✅ Published to PyPI
 - ✅ Complete documentation
 
-### Not Yet Implemented (Future):
+### Not Yet Implemented (Future)
+
 - [ ] Video recording of journey
 - [ ] Network traffic analysis
 - [ ] Performance metrics
@@ -186,7 +199,8 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 
 ## Quality Metrics
 
-### Code Quality:
+### Code Quality
+
 - **Lines of Code:** 3,147
 - **Files:** 23
 - **Modules:** 4 (cli, core, utils, integrations)
@@ -194,7 +208,8 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 - **Package:** Published to PyPI
 - **Tests:** Manual testing completed
 
-### Engineering Practices:
+### Engineering Practices
+
 - ✅ Modular architecture
 - ✅ Separation of concerns
 - ✅ Optional dependencies
@@ -205,7 +220,8 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 - ✅ Published package
 - ✅ Git best practices
 
-### User Experience:
+### User Experience
+
 - ✅ Simple installation
 - ✅ Clear commands
 - ✅ Helpful error messages
@@ -218,26 +234,31 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 ## Use Cases
 
 ### 1. UX Research
+
 - Record user flows through websites
 - Analyze against best practices
 - Identify UX issues before user testing
 
 ### 2. QA Testing
+
 - Validate user journeys after deployments
 - Check accessibility compliance
 - Ensure privacy standards
 
 ### 3. Conversion Optimization
+
 - Analyze checkout flows
 - Identify friction points
 - Compare against UX guidelines
 
 ### 4. Compliance Audits
+
 - WCAG 2.1 accessibility checks
 - Privacy compliance (PII detection)
 - Best practices validation
 
 ### 5. Competitive Analysis
+
 - Record competitor user flows
 - Analyze UX patterns
 - Benchmark against guidelines
@@ -247,6 +268,7 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 ## Roadmap
 
 ### v0.2.0 (Next Release)
+
 - [ ] Add automated tests (pytest)
 - [ ] Video recording support
 - [ ] Network traffic analysis
@@ -254,6 +276,7 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 - [ ] Custom guideline support
 
 ### v0.3.0 (Future)
+
 - [ ] Session replay functionality
 - [ ] A/B test analysis
 - [ ] Multi-user journey comparison
@@ -265,6 +288,7 @@ The UX Journey Scraper integrates seamlessly with the BayMAAR UX Guidelines syst
 ## Contributing
 
 The project is open source and contributions are welcome:
+
 - Report bugs via GitHub Issues
 - Submit feature requests
 - Contribute code via Pull Requests
@@ -275,12 +299,14 @@ The project is open source and contributions are welcome:
 ## Related Projects
 
 ### BayMAAR (Parent Project)
-- **Repository:** https://github.com/resabh/BayMAAR
+
+- **Repository:** <https://github.com/resabh/BayMAAR>
 - **Purpose:** E-commerce UX audit system with 324+ guidelines
 - **Integration:** Provides the UX guidelines used by this tool
 
 ### Design System Builder
-- **Repository:** https://github.com/resabh/design-system-builder
+
+- **Repository:** <https://github.com/resabh/design-system-builder>
 - **Purpose:** Extract design systems from websites using AI
 - **Synergy:** Can analyze design patterns in recorded journeys
 
@@ -288,7 +314,8 @@ The project is open source and contributions are welcome:
 
 ## Deployment Status
 
-### ✅ Completed:
+### ✅ Completed
+
 - [x] Code implementation
 - [x] Package structure
 - [x] PyPI publication
@@ -300,7 +327,8 @@ The project is open source and contributions are welcome:
 - [x] Accessibility checks
 - [x] Integration with BayMAAR
 
-### 🚀 Ready For:
+### 🚀 Ready For
+
 - ✅ Production use
 - ✅ Open source contributions
 - ✅ Portfolio showcase

@@ -3,7 +3,9 @@ Platform Discovery Demo
 
 Demonstrates automatic discovery of web, Android, and iOS platforms for e-commerce brands.
 """
+
 import asyncio
+
 from ux_journey_scraper.core import PlatformDiscovery, discover_platforms
 
 
@@ -65,7 +67,9 @@ async def demo_multiple_brands():
         ios_status = "✓" if result.ios_bundle_id else "✗"
         confidence = f"{result.confidence:.2f}"
 
-        print(f"{brand:<15} {web_status:<8} {android_status:<8} {ios_status:<8} {confidence:<12}")
+        print(
+            f"{brand:<15} {web_status:<8} {android_status:<8} {ios_status:<8} {confidence:<12}"
+        )
 
     print()
     print("=" * 80)
@@ -93,19 +97,25 @@ async def demo_detailed_results():
     if result.web_url:
         print(f"🌐 Web:")
         print(f"   URL: {result.web_url}")
-        print(f"   Discovery method: {result.metadata.get('web_discovery_method', 'N/A')}")
+        print(
+            f"   Discovery method: {result.metadata.get('web_discovery_method', 'N/A')}"
+        )
         print()
 
     if result.android_package:
         print(f"🤖 Android:")
         print(f"   Package: {result.android_package}")
-        print(f"   Discovery method: {result.metadata.get('android_discovery_method', 'N/A')}")
+        print(
+            f"   Discovery method: {result.metadata.get('android_discovery_method', 'N/A')}"
+        )
         print()
 
     if result.ios_bundle_id:
         print(f"🍎 iOS:")
         print(f"   Bundle ID: {result.ios_bundle_id}")
-        print(f"   Discovery method: {result.metadata.get('ios_discovery_method', 'N/A')}")
+        print(
+            f"   Discovery method: {result.metadata.get('ios_discovery_method', 'N/A')}"
+        )
         print()
 
     print("=" * 80)
@@ -127,19 +137,21 @@ async def demo_usage_scenario():
 
     result = await discover_platforms(brand)
 
-    print(f"✓ Found {len(result.platforms_available)} platforms: {', '.join(result.platforms_available)}")
+    print(
+        f"✓ Found {len(result.platforms_available)} platforms: {', '.join(result.platforms_available)}"
+    )
     print()
 
     print("Step 2: Plan testing strategy")
     print("-" * 80)
 
-    if 'web' in result.platforms_available:
+    if "web" in result.platforms_available:
         print(f"✓ Web testing: Test at {result.web_url}")
 
-    if 'android' in result.platforms_available:
+    if "android" in result.platforms_available:
         print(f"✓ Android testing: Test package {result.android_package}")
 
-    if 'ios' in result.platforms_available:
+    if "ios" in result.platforms_available:
         print(f"✓ iOS testing: Test bundle {result.ios_bundle_id}")
 
     print()

@@ -5,28 +5,33 @@ First stable release of UX Journey Scraper! 🎉
 ## ✨ Features
 
 ### Journey Recording
+
 - **Playwright-based automation** - Capture multi-step user flows through websites
 - **Automatic screenshots** - Visual documentation at each journey step
 - **Journey metadata** - Timestamps, URLs, page titles exported as JSON
 
 ### Privacy & Ethics
+
 - **PII blurring** - Automatically blur emails, credit cards, SSN, phone numbers
 - **Robots.txt compliance** - Respect website crawling policies
 - **Rate limiting** - Avoid overwhelming target servers
 
 ### UX Analysis
+
 - **324+ guidelines** - Research-backed e-commerce UX best practices
 - **Categorized analysis** - Buttons, forms, navigation, checkout, mobile
 - **Severity levels** - Critical, major, and minor violations
 - **Fix suggestions** - Actionable recommendations for each issue
 
 ### Accessibility
+
 - **WCAG 2.1 validation** - Level A/AA compliance checks
 - **Color contrast** - Automated contrast ratio validation
 - **Alt text detection** - Screen reader compatibility checks
 - **Keyboard navigation** - Accessibility support verification
 
 ### Reports
+
 - **Interactive HTML reports** - Annotated screenshots with findings
 - **Violation summaries** - Breakdown by severity
 - **JSON export** - Machine-readable journey data
@@ -86,4 +91,4 @@ MIT License - See [LICENSE](https://github.com/resabh/ux-journey-scraper/blob/ma
 
 ---
 
-**Full Changelog**: https://github.com/resabh/ux-journey-scraper/blob/main/CHANGELOG.md
+**Full Changelog**: <https://github.com/resabh/ux-journey-scraper/blob/main/CHANGELOG.md>

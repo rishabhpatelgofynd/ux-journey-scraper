@@ -3,10 +3,12 @@ Journey file loader - reads journey.json and provides page data.
 
 Loads journey files created by ux-journey-scraper for offline analysis.
 """
-from pathlib import Path
-from typing import Dict, List, Optional
+
 import json
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional
+
 from PIL import Image
 
 
@@ -17,6 +19,7 @@ class JourneyStep:
 
     Represents one page visit in a recorded user journey.
     """
+
     step_number: int
     url: str
     title: str
@@ -50,34 +53,34 @@ class JourneyStep:
         Raises:
             KeyError: If HTML not in page_data
         """
-        if 'html' not in self.page_data:
+        if "html" not in self.page_data:
             raise KeyError(f"No HTML in page_data for step {self.step_number}")
 
-        return self.page_data['html']
+        return self.page_data["html"]
 
     def get_forms(self) -> List[Dict]:
         """Get form data from page_data."""
-        return self.page_data.get('forms', [])
+        return self.page_data.get("forms", [])
 
     def get_links(self) -> List[Dict]:
         """Get links from page_data."""
-        return self.page_data.get('links', [])
+        return self.page_data.get("links", [])
 
     def get_buttons(self) -> List[Dict]:
         """Get buttons from page_data."""
-        return self.page_data.get('buttons', [])
+        return self.page_data.get("buttons", [])
 
     def get_ctas(self) -> List[Dict]:
         """Get CTAs from page_data."""
-        return self.page_data.get('ctas', [])
+        return self.page_data.get("ctas", [])
 
     def get_navigation(self) -> Dict:
         """Get navigation data from page_data."""
-        return self.page_data.get('navigation', {})
+        return self.page_data.get("navigation", {})
 
     def get_meta(self) -> Dict:
         """Get meta tags from page_data."""
-        return self.page_data.get('meta', {})
+        return self.page_data.get("meta", {})
 
 
 class JourneyLoader:
@@ -141,21 +144,21 @@ class JourneyLoader:
 
         steps = []
 
-        if 'steps' not in self._journey_data:
+        if "steps" not in self._journey_data:
             raise ValueError("Journey data missing 'steps' array")
 
-        for step_data in self._journey_data['steps']:
+        for step_data in self._journey_data["steps"]:
             # Resolve screenshot path (relative to journey.json)
-            screenshot_path = self.journey_dir / step_data['screenshot_path']
+            screenshot_path = self.journey_dir / step_data["screenshot_path"]
 
             step = JourneyStep(
-                step_number=step_data['step_number'],
-                url=step_data['url'],
-                title=step_data.get('title', ''),
+                step_number=step_data["step_number"],
+                url=step_data["url"],
+                title=step_data.get("title", ""),
                 screenshot_path=screenshot_path,
-                timestamp=step_data.get('timestamp', ''),
-                page_data=step_data.get('page_data', {}),
-                ux_validation=step_data.get('ux_validation')
+                timestamp=step_data.get("timestamp", ""),
+                page_data=step_data.get("page_data", {}),
+                ux_validation=step_data.get("ux_validation"),
             )
             steps.append(step)
 
@@ -186,7 +189,7 @@ class JourneyLoader:
         """
         if not self._journey_data:
             self.load()
-        return self._journey_data.get('start_url', '')
+        return self._journey_data.get("start_url", "")
 
     def get_total_steps(self) -> int:
         """
@@ -197,7 +200,7 @@ class JourneyLoader:
         """
         if not self._journey_data:
             self.load()
-        return self._journey_data.get('total_steps', 0)
+        return self._journey_data.get("total_steps", 0)
 
     def get_metadata(self) -> Dict:
         """
@@ -210,9 +213,9 @@ class JourneyLoader:
             self.load()
 
         return {
-            'start_url': self._journey_data.get('start_url'),
-            'start_time': self._journey_data.get('start_time'),
-            'end_time': self._journey_data.get('end_time'),
-            'viewport': self._journey_data.get('viewport'),
-            'total_steps': self._journey_data.get('total_steps')
+            "start_url": self._journey_data.get("start_url"),
+            "start_time": self._journey_data.get("start_time"),
+            "end_time": self._journey_data.get("end_time"),
+            "viewport": self._journey_data.get("viewport"),
+            "total_steps": self._journey_data.get("total_steps"),
         }

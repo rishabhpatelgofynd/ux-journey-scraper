@@ -4,14 +4,15 @@ Platform Discovery Module - Auto-discovers e-commerce platforms.
 Discovers web URLs, Android packages, and iOS bundle IDs for e-commerce brands.
 Public module - contains NO proprietary Baymard data.
 """
+
 import asyncio
 import logging
 import re
-from typing import Dict, List, Optional
 from dataclasses import dataclass
+from typing import Dict, List, Optional
+
 import aiohttp
 from bs4 import BeautifulSoup
-
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class PlatformDiscoveryResult:
         confidence: Confidence score 0.0-1.0
         metadata: Additional discovery metadata
     """
+
     brand_name: str
     web_url: Optional[str]
     android_package: Optional[str]
@@ -86,20 +88,20 @@ class PlatformDiscovery:
         # Discover web URL
         web_url = await self._discover_web_url(brand_name)
         if web_url:
-            platforms.append('web')
-            metadata['web_discovery_method'] = 'domain_inference'
+            platforms.append("web")
+            metadata["web_discovery_method"] = "domain_inference"
 
         # Discover Android package
         android_package = await self._discover_android_package(brand_name)
         if android_package:
-            platforms.append('android')
-            metadata['android_discovery_method'] = 'play_store_search'
+            platforms.append("android")
+            metadata["android_discovery_method"] = "play_store_search"
 
         # Discover iOS bundle ID
         ios_bundle_id = await self._discover_ios_bundle_id(brand_name)
         if ios_bundle_id:
-            platforms.append('ios')
-            metadata['ios_discovery_method'] = 'app_store_search'
+            platforms.append("ios")
+            metadata["ios_discovery_method"] = "app_store_search"
 
         # Calculate confidence
         confidence = len(platforms) / 3.0  # Max 3 platforms
@@ -116,7 +118,7 @@ class PlatformDiscovery:
             ios_bundle_id=ios_bundle_id,
             platforms_available=platforms,
             confidence=confidence,
-            metadata=metadata
+            metadata=metadata,
         )
 
     async def _discover_web_url(self, brand_name: str) -> Optional[str]:
@@ -136,7 +138,7 @@ class PlatformDiscovery:
         """
         try:
             # Strategy 1: Common domain patterns
-            brand_slug = brand_name.lower().replace(' ', '')
+            brand_slug = brand_name.lower().replace(" ", "")
             common_patterns = [
                 f"https://www.{brand_slug}.com",
                 f"https://{brand_slug}.com",
@@ -173,30 +175,33 @@ class PlatformDiscovery:
         """
         # Known brand table (fallback cache)
         known_packages = {
-            'amazon': 'com.amazon.mShop.android.shopping',
-            'nike': 'com.nike.omega',
-            'target': 'com.target.ui',
-            'walmart': 'com.walmart.android',
-            'temu': 'com.einnovation.temu',
-            'wish': 'com.contextlogic.wish',
-            'shein': 'com.zzkko',
-            'ebay': 'com.ebay.mobile',
-            'etsy': 'com.etsy.android',
-            'aliexpress': 'com.alibaba.aliexpresshd',
+            "amazon": "com.amazon.mShop.android.shopping",
+            "nike": "com.nike.omega",
+            "target": "com.target.ui",
+            "walmart": "com.walmart.android",
+            "temu": "com.einnovation.temu",
+            "wish": "com.contextlogic.wish",
+            "shein": "com.zzkko",
+            "ebay": "com.ebay.mobile",
+            "etsy": "com.etsy.android",
+            "aliexpress": "com.alibaba.aliexpresshd",
         }
 
-        brand_slug = brand_name.lower().replace(' ', '')
+        brand_slug = brand_name.lower().replace(" ", "")
 
         # Strategy 1: google-play-scraper (live)
         try:
             from google_play_scraper import search as gps_search
-            results = gps_search(brand_name, n_hits=3, lang='en', country='us')
+
+            results = gps_search(brand_name, n_hits=3, lang="en", country="us")
             if results:
-                package = results[0]['appId']
+                package = results[0]["appId"]
                 logger.debug(f"Found Android package via Play Store search: {package}")
                 return package
         except ImportError:
-            logger.debug("google-play-scraper not installed; using known_packages table")
+            logger.debug(
+                "google-play-scraper not installed; using known_packages table"
+            )
         except Exception as exc:
             logger.debug(f"Play Store search failed: {exc}")
 
@@ -225,23 +230,24 @@ class PlatformDiscovery:
         """
         # Known brand table (fallback cache)
         known_bundles = {
-            'amazon': 'com.amazon.Amazon',
-            'nike': 'com.nike.onenikecommerce',
-            'target': 'com.target.mobile',
-            'walmart': 'com.walmart.customer',
-            'temu': 'com.temu.app',
-            'wish': 'com.contextlogic.wish',
-            'shein': 'com.zzkko.shein',
-            'ebay': 'com.ebay.iphone',
-            'etsy': 'com.etsy.etsyforios',
-            'aliexpress': 'com.alibaba.aliexpress',
+            "amazon": "com.amazon.Amazon",
+            "nike": "com.nike.onenikecommerce",
+            "target": "com.target.mobile",
+            "walmart": "com.walmart.customer",
+            "temu": "com.temu.app",
+            "wish": "com.contextlogic.wish",
+            "shein": "com.zzkko.shein",
+            "ebay": "com.ebay.iphone",
+            "etsy": "com.etsy.etsyforios",
+            "aliexpress": "com.alibaba.aliexpress",
         }
 
-        brand_slug = brand_name.lower().replace(' ', '')
+        brand_slug = brand_name.lower().replace(" ", "")
 
         # Strategy 1: iTunes Search API (live, public, no auth required)
         try:
             import urllib.parse
+
             term = urllib.parse.quote(brand_name)
             url = (
                 f"https://itunes.apple.com/search"
@@ -254,7 +260,9 @@ class PlatformDiscovery:
                     if results:
                         bundle = results[0].get("bundleId")
                         if bundle:
-                            logger.debug(f"Found iOS bundle ID via iTunes API: {bundle}")
+                            logger.debug(
+                                f"Found iOS bundle ID via iTunes API: {bundle}"
+                            )
                             return bundle
         except Exception as exc:
             logger.debug(f"iTunes Search API failed: {exc}")
@@ -279,12 +287,16 @@ class PlatformDiscovery:
             True if URL exists and returns 200
         """
         try:
-            async with self.session.head(url, timeout=5, allow_redirects=True) as response:
+            async with self.session.head(
+                url, timeout=5, allow_redirects=True
+            ) as response:
                 return response.status == 200
         except Exception:
             return False
 
-    async def discover_batch(self, brand_names: List[str]) -> Dict[str, PlatformDiscoveryResult]:
+    async def discover_batch(
+        self, brand_names: List[str]
+    ) -> Dict[str, PlatformDiscoveryResult]:
         """
         Discover platforms for multiple brands in parallel.
 
@@ -294,7 +306,9 @@ class PlatformDiscovery:
         Returns:
             Dict mapping brand name to discovery result
         """
-        logger.info(f"🔍 Discovering platforms for {len(brand_names)} brands in parallel")
+        logger.info(
+            f"🔍 Discovering platforms for {len(brand_names)} brands in parallel"
+        )
 
         # Create tasks for parallel discovery
         tasks = [self.discover(brand) for brand in brand_names]
@@ -312,7 +326,7 @@ class PlatformDiscovery:
                     ios_bundle_id=None,
                     platforms_available=[],
                     confidence=0.0,
-                    metadata={'error': str(result)}
+                    metadata={"error": str(result)},
                 )
             else:
                 results_dict[brand] = result

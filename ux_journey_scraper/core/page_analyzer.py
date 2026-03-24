@@ -1,6 +1,7 @@
 """
 Page analyzer to extract key elements from web pages.
 """
+
 from bs4 import BeautifulSoup
 
 
@@ -123,12 +124,16 @@ class PageAnalyzer:
                 try:
                     bbox = await elem.bounding_box()
                     cta_data = {
-                        "text": await elem.inner_text() if await elem.inner_text() else text,
+                        "text": (
+                            await elem.inner_text() if await elem.inner_text() else text
+                        ),
                         "type": await elem.evaluate("(el) => el.tagName.toLowerCase()"),
                         "position": bbox if bbox else None,
-                        "href": await elem.get_attribute("href")
-                        if await elem.evaluate("(el) => el.tagName") == "A"
-                        else None,
+                        "href": (
+                            await elem.get_attribute("href")
+                            if await elem.evaluate("(el) => el.tagName") == "A"
+                            else None
+                        ),
                     }
                     ctas.append(cta_data)
                 except:
@@ -165,7 +170,10 @@ class PageAnalyzer:
                 links = breadcrumb.find_all("a")
                 nav_data["breadcrumbs"].extend(
                     [
-                        {"text": link.get_text(strip=True), "href": link.get("href", "")}
+                        {
+                            "text": link.get_text(strip=True),
+                            "href": link.get("href", ""),
+                        }
                         for link in links
                     ]
                 )

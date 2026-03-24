@@ -1,6 +1,7 @@
 """
 robots.txt checker with user confirmation.
 """
+
 import urllib.robotparser
 from urllib.parse import urlparse
 

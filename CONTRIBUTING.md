@@ -9,6 +9,7 @@ Thank you for your interest in contributing to UX Journey Scraper! This document
 ### What Belongs Here
 
 ✅ **Allowed**:
+
 - Journey capture functionality
 - Screenshot handling
 - Browser automation
@@ -17,6 +18,7 @@ Thank you for your interest in contributing to UX Journey Scraper! This document
 - Public documentation
 
 ❌ **NOT Allowed**:
+
 - Proprietary UX guidelines or research data
 - Integration with private analysis engines
 - Hard-coded paths to private data
@@ -27,6 +29,7 @@ Thank you for your interest in contributing to UX Journey Scraper! This document
 This package is focused on **journey capture only**. UX analysis features have been moved to a separate private repository (BayMAAR).
 
 **If you want to add UX analysis features**, please understand:
+
 - This package captures journeys (screenshots + data)
 - Analysis happens in a separate private system
 - Integration is via data files (journey.json), not code coupling
@@ -42,23 +45,27 @@ This package is focused on **journey capture only**. UX analysis features have b
 ### Setting Up Development Environment
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/resabh/ux-journey-scraper.git
    cd ux-journey-scraper
    ```
 
 2. **Create a virtual environment:**
+
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
 3. **Install development dependencies:**
+
    ```bash
    pip install -e ".[dev]"
    ```
 
 4. **Install Playwright browsers:**
+
    ```bash
    playwright install chromium
    ```
@@ -103,6 +110,7 @@ black . && isort . && flake8 . && pytest tests/
 ```
 
 **Privacy Checklist** (run before every commit):
+
 - [ ] No proprietary data files added (*.json with guidelines, etc.)
 - [ ] No hard-coded paths to private data (`.local/`, `baymard_backup/`, etc.)
 - [ ] No integration code that requires private dependencies
@@ -133,6 +141,7 @@ pytest tests/ --cov=ux_journey_scraper --cov-report=term --cov-report=html
 ```
 
 View the HTML report:
+
 ```bash
 open htmlcov/index.html  # macOS
 xdg-open htmlcov/index.html  # Linux
@@ -154,6 +163,7 @@ Our CI/CD pipeline runs automatically on every push and pull request.
 ### Triggering CI
 
 The CI pipeline runs on:
+
 - Push to `main` or `develop` branches
 - Pull requests to `main` or `develop` branches
 - Published releases
@@ -165,6 +175,7 @@ Check the "Actions" tab on GitHub to view CI results for your pull request.
 ## Pull Request Process
 
 1. **Create a feature branch:**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -175,11 +186,13 @@ Check the "Actions" tab on GitHub to view CI results for your pull request.
    - Update documentation as needed
 
 3. **Ensure all checks pass:**
+
    ```bash
    black . && isort . && flake8 . && pytest tests/
    ```
 
 4. **Push your branch:**
+
    ```bash
    git push origin feature/your-feature-name
    ```

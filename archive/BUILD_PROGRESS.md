@@ -36,6 +36,7 @@ ux-journey-scraper/
 
 **Total Files:** 20
 **Total Lines of Code:** ~1,977 lines
+
 - Core modules: 853 lines
 - Analyzers: 408 lines
 - Reporters: 491 lines
@@ -49,6 +50,7 @@ ux-journey-scraper/
 ### ✅ Phase 1 Complete (Desktop Web)
 
 **Journey Recording:**
+
 - ✅ Interactive user-guided recording
 - ✅ Automated recording from URL list
 - ✅ Screenshot capture per step
@@ -61,6 +63,7 @@ ux-journey-scraper/
 - ✅ Viewport customization (desktop/mobile)
 
 **UX Analysis:**
+
 - ✅ Integration with ecommerce-ux-guidelines (324+ guidelines)
 - ✅ Page type detection (landing, product, checkout, etc.)
 - ✅ UX violation detection with severity levels
@@ -70,6 +73,7 @@ ux-journey-scraper/
 - ✅ Guideline ID citations
 
 **Journey Flow Analysis:**
+
 - ✅ Unique page counting
 - ✅ Backtracking detection
 - ✅ Repeated page identification
@@ -78,6 +82,7 @@ ux-journey-scraper/
 - ✅ Journey complexity scoring
 
 **Reporting:**
+
 - ✅ Interactive HTML reports with embedded screenshots
 - ✅ JSON export for automation
 - ✅ Color-coded severity levels
@@ -86,6 +91,7 @@ ux-journey-scraper/
 - ✅ Beautiful responsive design
 
 **CLI Interface:**
+
 - ✅ `ux-journey record` - Interactive recording
 - ✅ `ux-journey analyze` - Analyze saved journey
 - ✅ `ux-journey run` - Record + analyze in one command
@@ -93,6 +99,7 @@ ux-journey-scraper/
 - ✅ Configurable options (viewport, PII blur, robots.txt, etc.)
 
 **Privacy & Security:**
+
 - ✅ PII detection patterns (regex-based)
 - ✅ Gaussian blur for sensitive data
 - ✅ robots.txt respect with user override
@@ -141,29 +148,34 @@ twine upload dist/*
 ## 🎯 Key Features
 
 ### 1. **Shareable Public Tool**
+
 - Clean, professional package
 - Ready for PyPI distribution
 - MIT licensed
 - Comprehensive documentation
 
 ### 2. **ecommerce-ux-guidelines Integration**
+
 - Uses your proprietary 324+ UX guidelines
 - Validates journeys against research-backed patterns
 - Provides specific, actionable recommendations
 - Cites guideline IDs for reference
 
 ### 3. **Privacy-Aware**
+
 - PII blur on screenshots (emails, cards, names)
 - robots.txt respect with user confirmation
 - No external data collection
 
 ### 4. **Developer-Friendly**
+
 - Simple Python API
 - Full-featured CLI
 - JSON export for automation
 - Extensible architecture
 
 ### 5. **Visual Reports**
+
 - Interactive HTML reports
 - Embedded screenshots
 - Color-coded issues
@@ -172,6 +184,7 @@ twine upload dist/*
 ## 🔗 Dependencies
 
 **Core:**
+
 - playwright (browser automation)
 - Pillow (image processing)
 - beautifulsoup4 (HTML parsing)
@@ -179,6 +192,7 @@ twine upload dist/*
 - **ecommerce-ux-guidelines** (your UX package)
 
 **This creates a perfect ecosystem:**
+
 ```
 ux-journey-scraper (public, shareable)
     ↓ depends on
@@ -188,6 +202,7 @@ ecommerce-ux-guidelines (proprietary guidelines)
 ## 🚀 Next Steps
 
 1. **Test Locally:**
+
    ```bash
    cd ux-journey-scraper
    pip install -e .
@@ -196,6 +211,7 @@ ecommerce-ux-guidelines (proprietary guidelines)
    ```
 
 2. **Initialize Git Repository:**
+
    ```bash
    git init
    git add .
@@ -203,6 +219,7 @@ ecommerce-ux-guidelines (proprietary guidelines)
    ```
 
 3. **Push to GitHub:**
+
    ```bash
    git remote add origin https://github.com/rishabhpatelgofynd/ux-journey-scraper.git
    git branch -M main
@@ -210,6 +227,7 @@ ecommerce-ux-guidelines (proprietary guidelines)
    ```
 
 4. **Publish to PyPI:**
+
    ```bash
    pip install twine build
    python -m build
@@ -225,21 +243,25 @@ ecommerce-ux-guidelines (proprietary guidelines)
 ## 💡 Value Proposition
 
 **For UX Designers:**
+
 - Analyze competitor journeys
 - Validate designs before development
 - Document user flows with screenshots
 
 **For Developers:**
+
 - Automate UX validation
 - Pre-launch quality checks
 - Track UX improvements over time
 
 **For QA Teams:**
+
 - Systematic journey testing
 - Accessibility compliance
 - Regression detection
 
 **Unique Selling Points:**
+
 1. **Only tool with 324+ research-backed UX guidelines**
 2. **AI-powered journey analysis** (via your guidelines)
 3. **Privacy-aware** (PII blur built-in)

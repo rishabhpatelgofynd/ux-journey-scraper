@@ -8,20 +8,21 @@ Handles:
 - Checkpoint/resume capability
 - Final context assembly
 """
+
 import asyncio
 import json
-import random
 import logging
+import random
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
 from ..config.scrape_config import ScrapeConfig
-from .session_planner import SessionPlanner, VisitPlan
+from .autonomous_crawler import AutonomousCrawler
 from .cookie_jar import CookieJar
 from .proxy_rotator import ProxyRotator
-from .autonomous_crawler import AutonomousCrawler
+from .session_planner import SessionPlanner, VisitPlan
 
 logger = logging.getLogger(__name__)
 
@@ -139,16 +140,13 @@ class CrawlOrchestrator:
                 # Checkpoint
                 completed_session_ids.add(plan.session_id)
                 self._save_checkpoint(
-                    checkpoint_path, completed_session_ids,
-                    all_screens, plan.proxy_slot
+                    checkpoint_path, completed_session_ids, all_screens, plan.proxy_slot
                 )
 
             except Exception as e:
                 logger.error(f"Session {plan.session_id} failed: {e}", exc_info=True)
                 # Extended cooldown after failure
-                await asyncio.sleep(
-                    self.config.session_strategy.max_cooldown_sec * 2
-                )
+                await asyncio.sleep(self.config.session_strategy.max_cooldown_sec * 2)
 
         # Build final context
         context = self._build_context(all_screens, run_id, output_dir)
@@ -203,11 +201,7 @@ class CrawlOrchestrator:
         return states or ["logged_out"]  # Default to logged_out
 
     def _save_checkpoint(
-        self,
-        path: Path,
-        completed: set,
-        screens: List,
-        proxy_slot: int
+        self, path: Path, completed: set, screens: List, proxy_slot: int
     ):
         """Save checkpoint for resume capability."""
         try:
@@ -247,10 +241,7 @@ class CrawlOrchestrator:
         return screens
 
     def _build_context(
-        self,
-        screens: List[Dict],
-        run_id: str,
-        output_dir: Path
+        self, screens: List[Dict], run_id: str, output_dir: Path
     ) -> Dict:
         """
         Build final context output.

@@ -4,6 +4,7 @@ Human behavior simulation for anti-bot detection.
 Implements realistic mouse movements, typing patterns, and timing delays
 to make automated browsing indistinguishable from human interaction.
 """
+
 import asyncio
 import math
 import random
@@ -61,7 +62,9 @@ class HumanBehaviour:
         return curve
 
     @staticmethod
-    def _bezier_point(points: List[Tuple[float, float]], t: float) -> Tuple[float, float]:
+    def _bezier_point(
+        points: List[Tuple[float, float]], t: float
+    ) -> Tuple[float, float]:
         """Calculate a single point on a Bezier curve using De Casteljau's algorithm."""
         if len(points) == 1:
             return points[0]

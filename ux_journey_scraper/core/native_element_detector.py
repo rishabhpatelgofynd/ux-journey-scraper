@@ -4,6 +4,7 @@ Native element detector for Appium-based mobile crawling.
 Traverses the accessibility tree and priority-scores interactive elements using
 the same keyword table as NavigationQueue.PRIORITY_KEYWORDS.
 """
+
 import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
@@ -17,8 +18,8 @@ class NativeElement:
 
     element_id: str
     text: str
-    element_type: str    # e.g. "XCUIElementTypeButton" / "android.widget.Button"
-    bounds: Dict         # {"x": 0, "y": 0, "width": 100, "height": 44}
+    element_type: str  # e.g. "XCUIElementTypeButton" / "android.widget.Button"
+    bounds: Dict  # {"x": 0, "y": 0, "width": 100, "height": 44}
     priority: int = 0
 
 
@@ -176,7 +177,9 @@ class NativeElementDetector:
                 return score
         return 10  # default low priority
 
-    def is_flutter_only(self, elements: List[NativeElement], platform_type: str) -> bool:
+    def is_flutter_only(
+        self, elements: List[NativeElement], platform_type: str
+    ) -> bool:
         """
         Heuristic: if all found elements are generic view types with no text,
         the app is likely Flutter with semantics disabled.
@@ -197,7 +200,10 @@ class NativeElementDetector:
         for el in elements:
             if platform_type == "native_ios" and el.element_type != flutter_ios_type:
                 return False
-            if platform_type == "native_android" and el.element_type != flutter_android_type:
+            if (
+                platform_type == "native_android"
+                and el.element_type != flutter_android_type
+            ):
                 return False
             if el.text.strip():
                 return False

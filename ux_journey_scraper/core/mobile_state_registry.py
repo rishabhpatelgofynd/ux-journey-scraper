@@ -4,6 +4,7 @@ Perceptual-hash-based screen deduplication for native app crawling.
 Native apps have no URLs, so deduplication is based on a combination of
 a perceptual hash of the screenshot and a text summary of visible elements.
 """
+
 import base64
 import hashlib
 import io
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 try:
     import imagehash
     from PIL import Image
+
     _IMAGEHASH_AVAILABLE = True
 except ImportError:
     _IMAGEHASH_AVAILABLE = False

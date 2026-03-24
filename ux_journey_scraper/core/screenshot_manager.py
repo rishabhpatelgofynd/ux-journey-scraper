@@ -1,6 +1,7 @@
 """
 Screenshot manager with PII blur capabilities.
 """
+
 import asyncio
 import re
 from pathlib import Path
@@ -168,7 +169,9 @@ class ScreenshotManager:
 
             # Find text elements containing PII patterns
             all_text_elements = await page.query_selector_all("*")
-            for elem in all_text_elements[:100]:  # Limit to first 100 elements for performance
+            for elem in all_text_elements[
+                :100
+            ]:  # Limit to first 100 elements for performance
                 try:
                     text = await elem.inner_text()
 
@@ -197,7 +200,9 @@ class ScreenshotManager:
 
         return regions
 
-    def create_annotated_screenshot(self, screenshot_path, annotations, output_path=None):
+    def create_annotated_screenshot(
+        self, screenshot_path, annotations, output_path=None
+    ):
         """
         Create an annotated version of a screenshot with issue markers.
 
@@ -239,7 +244,9 @@ class ScreenshotManager:
 
             # Draw number marker
             marker_size = 25
-            draw.ellipse([(x, y - marker_size), (x + marker_size, y)], fill=color, outline=color)
+            draw.ellipse(
+                [(x, y - marker_size), (x + marker_size, y)], fill=color, outline=color
+            )
             draw.text((x + 5, y - 20), str(i), fill="white")
 
         # Save annotated screenshot

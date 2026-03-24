@@ -1,18 +1,19 @@
 """
 Command-line interface for UX Journey Scraper.
 """
+
 import asyncio
 from pathlib import Path
 
 import click
-
 from ux_journey_scraper.config.scrape_config import ScrapeConfig
 from ux_journey_scraper.core.autonomous_crawler import AutonomousCrawler
 from ux_journey_scraper.core.journey_recorder import Journey, JourneyRecorder
 
 try:
-    from ux_journey_scraper.core.appium_crawler import AppiumCrawler
     from ux_journey_scraper.core.app_provisioner import AppProvisioner
+    from ux_journey_scraper.core.appium_crawler import AppiumCrawler
+
     _APPIUM_AVAILABLE = True
 except ImportError:
     _APPIUM_AVAILABLE = False
@@ -21,6 +22,7 @@ except ImportError:
 def _run_platform(scrape_config, platform, platform_dir):
     """Shared crawl execution used by both 'crawl' and 'scrape' commands."""
     from pathlib import Path as _Path
+
     platform_dir = _Path(platform_dir)
 
     if platform.is_native:
@@ -62,7 +64,9 @@ def cli():
 
 @cli.command()
 @click.option("--config", required=True, help="Path to YAML configuration file")
-@click.option("--output-dir", default="journey_output", help="Output directory for results")
+@click.option(
+    "--output-dir", default="journey_output", help="Output directory for results"
+)
 def crawl(config, output_dir):
     """Autonomous crawl using YAML configuration (v0.5.0)."""
     click.echo(f"\n{'='*60}")
@@ -98,6 +102,7 @@ def crawl(config, output_dir):
     except Exception as e:
         click.echo(f"\nCrawl error: {e}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -106,11 +111,17 @@ def crawl(config, output_dir):
 @click.option("--output", default="journey.json", help="Output file path")
 @click.option("--viewport", default="1920x1080", help="Viewport size (e.g., 1920x1080)")
 @click.option("--blur-pii/--no-blur-pii", default=True, help="Blur PII in screenshots")
-@click.option("--respect-robots/--ignore-robots", default=True, help="Respect robots.txt")
-@click.option("--headless/--no-headless", default=False, help="Run browser in headless mode")
+@click.option(
+    "--respect-robots/--ignore-robots", default=True, help="Respect robots.txt"
+)
+@click.option(
+    "--headless/--no-headless", default=False, help="Run browser in headless mode"
+)
 def record(start_url, output, viewport, blur_pii, respect_robots, headless):
     """[DEPRECATED] Record a user journey interactively. Use 'crawl' for v0.2.0 features."""
-    click.echo("⚠️  WARNING: This command is deprecated. Use 'ux-journey crawl --config <file>' for v0.2.0 features.\n")
+    click.echo(
+        "⚠️  WARNING: This command is deprecated. Use 'ux-journey crawl --config <file>' for v0.2.0 features.\n"
+    )
     try:
         # Parse viewport
         width, height = map(int, viewport.split("x"))
@@ -174,12 +185,21 @@ def info(journey_file):
 
 
 @cli.command()
-@click.option("--brand", required=True, help="Brand name to scrape (e.g. 'Amazon', 'Flipkart')")
-@click.option("--platforms", default="web_desktop,web_mobile,native_android,native_ios",
-              help="Comma-separated platforms: web_desktop,web_mobile,native_android,native_ios")
-@click.option("--output-dir", default="journey_output", help="Output directory for results")
+@click.option(
+    "--brand", required=True, help="Brand name to scrape (e.g. 'Amazon', 'Flipkart')"
+)
+@click.option(
+    "--platforms",
+    default="web_desktop,web_mobile,native_android,native_ios",
+    help="Comma-separated platforms: web_desktop,web_mobile,native_android,native_ios",
+)
+@click.option(
+    "--output-dir", default="journey_output", help="Output directory for results"
+)
 @click.option("--max-pages", default=10, help="Max pages to capture per platform")
-@click.option("--appium-server", default="http://localhost:4723", help="Appium server URL")
+@click.option(
+    "--appium-server", default="http://localhost:4723", help="Appium server URL"
+)
 def scrape(brand, platforms, output_dir, max_pages, appium_server):
     """Auto-provision and scrape a brand across all platforms.
 
@@ -193,34 +213,38 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
     click.echo(f"Output:    {output_dir}\n")
 
     from ux_journey_scraper.config.scrape_config import (
-        PlatformConfig, ScrapeConfig, AuthConfig, CrawlerConfig,
-        BrowserProvider, NativeAppConfig,
+        AuthConfig,
+        BrowserProvider,
+        CrawlerConfig,
+        NativeAppConfig,
+        PlatformConfig,
+        ScrapeConfig,
     )
 
     # Known brand web URLs — fallback to www.{brand}.com
     BRAND_URLS = {
-        "amazon":   "https://www.amazon.in",
+        "amazon": "https://www.amazon.in",
         "flipkart": "https://www.flipkart.com",
-        "nykaa":    "https://www.nykaa.com",
-        "myntra":   "https://www.myntra.com",
-        "ajio":     "https://www.ajio.com",
-        "meesho":   "https://www.meesho.com",
-        "swiggy":   "https://www.swiggy.com",
-        "zomato":   "https://www.zomato.com",
+        "nykaa": "https://www.nykaa.com",
+        "myntra": "https://www.myntra.com",
+        "ajio": "https://www.ajio.com",
+        "meesho": "https://www.meesho.com",
+        "swiggy": "https://www.swiggy.com",
+        "zomato": "https://www.zomato.com",
         "snapdeal": "https://www.snapdeal.com",
-        "walmart":  "https://www.walmart.com",
-        "target":   "https://www.target.com",
-        "ebay":     "https://www.ebay.com",
-        "etsy":     "https://www.etsy.com",
-        "shein":    "https://www.shein.com",
-        "temu":     "https://www.temu.com",
+        "walmart": "https://www.walmart.com",
+        "target": "https://www.target.com",
+        "ebay": "https://www.ebay.com",
+        "etsy": "https://www.etsy.com",
+        "shein": "https://www.shein.com",
+        "temu": "https://www.temu.com",
     }
     base_url = BRAND_URLS.get(brand.lower(), f"https://www.{brand.lower()}.com")
 
     VIEWPORTS = {
         "web_desktop": {"width": 1920, "height": 1080},
-        "web_mobile":  {"width": 390,  "height": 844},
-        "web_tablet":  {"width": 820,  "height": 1180},
+        "web_mobile": {"width": 390, "height": 844},
+        "web_tablet": {"width": 820, "height": 1180},
     }
     platform_list = [p.strip() for p in platforms.split(",")]
     total_pages = 0
@@ -244,13 +268,17 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
                 )
             elif platform_type in VIEWPORTS:
                 platform_configs.append(
-                    PlatformConfig(type=platform_type, viewport=VIEWPORTS[platform_type])
+                    PlatformConfig(
+                        type=platform_type, viewport=VIEWPORTS[platform_type]
+                    )
                 )
             else:
                 click.echo(f"  Unknown platform type: {platform_type}")
         except Exception as e:
             click.echo(f"  Provisioning error: {e}")
-            import traceback; traceback.print_exc()
+            import traceback
+
+            traceback.print_exc()
 
     if not platform_configs:
         click.echo("No platforms configured. Exiting.")
@@ -259,13 +287,14 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
     # Use Browserbase for web platforms if credentials are available,
     # otherwise fall back to local Patchright stealth browser
     import os as _os
+
     has_browserbase = bool(
-        _os.environ.get("BROWSERBASE_API_KEY") and
-        _os.environ.get("BROWSERBASE_PROJECT_ID")
+        _os.environ.get("BROWSERBASE_API_KEY")
+        and _os.environ.get("BROWSERBASE_PROJECT_ID")
     )
     browser_provider = BrowserProvider(
         type="browserbase" if has_browserbase else "local",
-        use_proxy=False,   # proxy requires paid plan; cloud browser itself is free
+        use_proxy=False,  # proxy requires paid plan; cloud browser itself is free
         use_stealth=True,
     )
     if has_browserbase:
@@ -297,7 +326,9 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
             total_pages += _run_platform(scrape_config, platform, platform_dir)
         except Exception as e:
             click.echo(f"  Error: {e}")
-            import traceback; traceback.print_exc()
+            import traceback
+
+            traceback.print_exc()
 
     click.echo(f"\n{'='*60}")
     click.echo(f"All platforms complete! Total pages: {total_pages}")

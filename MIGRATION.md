@@ -33,10 +33,12 @@ pip install --upgrade ux-journey-scraper
 ```
 
 New dependencies added:
+
 - `pyyaml>=6.0.0`
 - `aiofiles>=23.0.0`
 
 Optional for better anti-detection:
+
 ```bash
 pip install patchright
 patchright install chromium
@@ -45,6 +47,7 @@ patchright install chromium
 ### Step 2: Create Configuration File
 
 **Old way (v0.1.0):**
+
 ```bash
 ux-journey record https://example.com \
   --viewport 1920x1080 \
@@ -55,6 +58,7 @@ ux-journey record https://example.com \
 **New way (v0.2.0):**
 
 Create `scrape-config.yaml`:
+
 ```yaml
 target:
   name: "Example Site"
@@ -79,11 +83,13 @@ crawler:
 ```
 
 Then run:
+
 ```bash
 ux-journey crawl --config scrape-config.yaml
 ```
 
 Use the example config as a template:
+
 ```bash
 cp scrape-config.example.yaml my-config.yaml
 # Edit my-config.yaml with your settings
@@ -93,6 +99,7 @@ ux-journey crawl --config my-config.yaml
 ### Step 3: Update Output Handling
 
 **Old output (v0.1.0):**
+
 ```json
 {
   "start_url": "https://example.com",
@@ -109,6 +116,7 @@ ux-journey crawl --config my-config.yaml
 ```
 
 **New output (v0.2.0):**
+
 - Same structure, but saved to `journey_output/journey.json`
 - Screenshots in `journey_output/screenshots/`
 - Future versions will add `context.json` with journey graph
@@ -239,6 +247,7 @@ crawler:
 ### Issue: "Config file not found"
 
 **Solution:** Provide absolute path or ensure file is in current directory.
+
 ```bash
 ux-journey crawl --config ./scrape-config.yaml
 ```
@@ -250,6 +259,7 @@ ux-journey crawl --config ./scrape-config.yaml
 ### Issue: "Test card validation failed"
 
 **Solution:** Only these test cards are allowed:
+
 - Visa: `4111111111111111`
 - Mastercard: `5555555555554444`
 - Amex: `378282246310005`
@@ -257,6 +267,7 @@ ux-journey crawl --config ./scrape-config.yaml
 ### Issue: "Authentication failed"
 
 **Solution:** Verify:
+
 - `login_url` is correct
 - `credentials` are valid
 - `login_success_indicator` matches post-login state
@@ -265,11 +276,12 @@ ux-journey crawl --config ./scrape-config.yaml
 
 - **Documentation**: See README.md for full v0.2.0 documentation
 - **Examples**: Check `scrape-config.example.yaml`
-- **Issues**: Report at https://github.com/resabh/ux-journey-scraper/issues
+- **Issues**: Report at <https://github.com/resabh/ux-journey-scraper/issues>
 
 ## Rollback to v0.1.0
 
 If you need to rollback:
+
 ```bash
 pip install ux-journey-scraper==0.1.0
 ```
@@ -277,6 +289,7 @@ pip install ux-journey-scraper==0.1.0
 ## What's Next
 
 Planned for v0.3.0:
+
 - Context file output (journey graph + parity matrix)
 - Multi-platform parallel crawling
 - CAPTCHA detection improvements

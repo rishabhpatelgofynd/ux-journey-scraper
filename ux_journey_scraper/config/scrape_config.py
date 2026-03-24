@@ -3,10 +3,12 @@ YAML-based configuration system for autonomous crawling.
 
 Supports multi-platform, multi-auth scenarios with comprehensive form filling.
 """
-import yaml
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+import yaml
 
 
 @dataclass
@@ -14,15 +16,15 @@ class NativeAppConfig:
     """Configuration for native Android/iOS app testing via Appium."""
 
     appium_server: str = "http://localhost:4723"
-    app_package: Optional[str] = None      # Android: "com.amazon.mShop.android.shopping"
-    app_activity: Optional[str] = None     # Android: ".HomeActivity"
-    bundle_id: Optional[str] = None        # iOS: "com.amazon.Amazon"
-    apk_path: Optional[str] = None         # Install from local APK
-    ipa_path: Optional[str] = None         # Install from local IPA
-    avd_name: Optional[str] = None         # Android AVD emulator name
-    simulator_udid: Optional[str] = None   # iOS Simulator UDID
-    device_name: Optional[str] = None      # "Pixel 7" / "iPhone 15 Pro"
-    platform_version: Optional[str] = None # "14.0" / "17.4"
+    app_package: Optional[str] = None  # Android: "com.amazon.mShop.android.shopping"
+    app_activity: Optional[str] = None  # Android: ".HomeActivity"
+    bundle_id: Optional[str] = None  # iOS: "com.amazon.Amazon"
+    apk_path: Optional[str] = None  # Install from local APK
+    ipa_path: Optional[str] = None  # Install from local IPA
+    avd_name: Optional[str] = None  # Android AVD emulator name
+    simulator_udid: Optional[str] = None  # iOS Simulator UDID
+    device_name: Optional[str] = None  # "Pixel 7" / "iPhone 15 Pro"
+    platform_version: Optional[str] = None  # "14.0" / "17.4"
     safari_initial_url: Optional[str] = None  # iOS Safari: open this URL on launch
     extra_caps: Optional[Dict[str, Any]] = None  # Any additional Appium capabilities
 
@@ -31,8 +33,12 @@ class NativeAppConfig:
 class PlatformConfig:
     """Configuration for a specific platform (desktop, mobile, tablet, or native app)."""
 
-    type: str  # "web_desktop", "web_mobile", "web_tablet", "native_android", "native_ios"
-    viewport: Optional[Dict[str, int]] = None  # {"width": 1920, "height": 1080} — web only
+    type: (
+        str  # "web_desktop", "web_mobile", "web_tablet", "native_android", "native_ios"
+    )
+    viewport: Optional[Dict[str, int]] = (
+        None  # {"width": 1920, "height": 1080} — web only
+    )
     user_agent: Optional[str] = None
     locale: str = "en-IN"
     timezone_id: str = "Asia/Kolkata"
@@ -50,13 +56,23 @@ class PlatformConfig:
 
     def __post_init__(self):
         """Validate platform configuration."""
-        valid_types = ["web_desktop", "web_mobile", "web_tablet", "native_android", "native_ios"]
+        valid_types = [
+            "web_desktop",
+            "web_mobile",
+            "web_tablet",
+            "native_android",
+            "native_ios",
+        ]
         if self.type not in valid_types:
-            raise ValueError(f"Invalid platform type: {self.type}. Must be one of {valid_types}")
+            raise ValueError(
+                f"Invalid platform type: {self.type}. Must be one of {valid_types}"
+            )
 
         if self.is_web:
             if self.viewport is None:
-                raise ValueError(f"Platform type '{self.type}' requires a viewport configuration")
+                raise ValueError(
+                    f"Platform type '{self.type}' requires a viewport configuration"
+                )
             required_keys = {"width", "height"}
             if not required_keys.issubset(self.viewport.keys()):
                 raise ValueError(f"Viewport must contain {required_keys}")
@@ -86,7 +102,9 @@ class AuthConfig:
 
     logged_out: bool = True
     logged_in: bool = False
-    credentials: Optional[Dict[str, str]] = None  # {"username": "...", "password": "..."}
+    credentials: Optional[Dict[str, str]] = (
+        None  # {"username": "...", "password": "..."}
+    )
     login_url: Optional[str] = None
     login_success_indicator: Optional[str] = None  # CSS selector or URL fragment
     session_file: Optional[str] = None  # Path to save/load session
@@ -145,7 +163,7 @@ class FormFillConfig:
         valid_test_cards = [
             "4111111111111111",  # Visa
             "5555555555554444",  # Mastercard
-            "378282246310005",   # Amex
+            "378282246310005",  # Amex
         ]
         if self.card_number not in valid_test_cards:
             raise ValueError(
@@ -162,19 +180,21 @@ class SessionStrategy:
     # "split" = multiple visit sessions with cooldowns (default, recommended)
     # "continuous" = original behavior, all pages in one session (for weak-defense sites)
 
-    pages_per_session: int = 20            # Max pages per visit session
-    min_cooldown_sec: int = 120            # 2 min minimum between sessions
-    max_cooldown_sec: int = 600            # 10 min maximum between sessions
-    persist_cookies: bool = True           # Reuse cookies across sessions (returning visitor)
-    randomize_entry_points: bool = True    # Don't always start from homepage
-    rotate_ip_per_session: bool = False    # Rotate proxy IP every session
-    rotate_ip_per_n_sessions: int = 3      # Rotate every N sessions (if above is False)
+    pages_per_session: int = 20  # Max pages per visit session
+    min_cooldown_sec: int = 120  # 2 min minimum between sessions
+    max_cooldown_sec: int = 600  # 10 min maximum between sessions
+    persist_cookies: bool = True  # Reuse cookies across sessions (returning visitor)
+    randomize_entry_points: bool = True  # Don't always start from homepage
+    rotate_ip_per_session: bool = False  # Rotate proxy IP every session
+    rotate_ip_per_n_sessions: int = 3  # Rotate every N sessions (if above is False)
 
     def __post_init__(self):
         """Validate session strategy configuration."""
         valid_modes = ["split", "continuous"]
         if self.mode not in valid_modes:
-            raise ValueError(f"Invalid session mode: {self.mode}. Must be one of {valid_modes}")
+            raise ValueError(
+                f"Invalid session mode: {self.mode}. Must be one of {valid_modes}"
+            )
 
         if self.pages_per_session < 1:
             raise ValueError("pages_per_session must be at least 1")
@@ -191,22 +211,26 @@ class ProxySettings:
     """Proxy configuration for IP rotation and anonymization."""
 
     enabled: bool = False
-    provider: str = "residential"          # residential | datacenter | rotating
-    endpoint_env: Optional[str] = None     # Env var holding proxy URL
-    rotate_per: str = "session"            # session | request | domain
-    pool_size: int = 5                     # Number of IPs in rotation pool
-    geo: Optional[str] = None              # Geo target: "IN", "US", etc.
+    provider: str = "residential"  # residential | datacenter | rotating
+    endpoint_env: Optional[str] = None  # Env var holding proxy URL
+    rotate_per: str = "session"  # session | request | domain
+    pool_size: int = 5  # Number of IPs in rotation pool
+    geo: Optional[str] = None  # Geo target: "IN", "US", etc.
     domains: List[str] = field(default_factory=list)  # Domain filter
 
     def __post_init__(self):
         """Validate proxy configuration."""
         valid_providers = ["residential", "datacenter", "rotating"]
         if self.provider not in valid_providers:
-            raise ValueError(f"Invalid provider: {self.provider}. Must be one of {valid_providers}")
+            raise ValueError(
+                f"Invalid provider: {self.provider}. Must be one of {valid_providers}"
+            )
 
         valid_rotate_per = ["session", "request", "domain"]
         if self.rotate_per not in valid_rotate_per:
-            raise ValueError(f"Invalid rotate_per: {self.rotate_per}. Must be one of {valid_rotate_per}")
+            raise ValueError(
+                f"Invalid rotate_per: {self.rotate_per}. Must be one of {valid_rotate_per}"
+            )
 
         if self.pool_size < 1:
             raise ValueError("pool_size must be at least 1")
@@ -221,7 +245,9 @@ class UXValidationConfig:
     auto_detect_page_type: bool = True  # Automatically detect page types
     fail_on_violations: bool = False  # Fail crawl if critical violations found
     min_compliance_score: float = 0.0  # Minimum compliance score (0-100)
-    severity_threshold: str = "medium"  # Report violations at this level or higher: low, medium, high
+    severity_threshold: str = (
+        "medium"  # Report violations at this level or higher: low, medium, high
+    )
     validate_on_capture: bool = True  # Validate pages as they're captured
     save_validation_report: bool = True  # Save detailed validation report
 
@@ -238,9 +264,7 @@ class UXValidationConfig:
 
         valid_severities = ["low", "medium", "high"]
         if self.severity_threshold not in valid_severities:
-            raise ValueError(
-                f"severity_threshold must be one of {valid_severities}"
-            )
+            raise ValueError(f"severity_threshold must be one of {valid_severities}")
 
 
 @dataclass
@@ -252,20 +276,22 @@ class BrowserProvider:
     # "browserbase" = Browserbase cloud browser (paid, managed anti-detection)
 
     # Browserbase-specific settings (ignored when type = "local")
-    api_key_env: str = "BROWSERBASE_API_KEY"        # Env var for API key
+    api_key_env: str = "BROWSERBASE_API_KEY"  # Env var for API key
     project_id_env: str = "BROWSERBASE_PROJECT_ID"  # Env var for project ID
-    use_proxy: bool = True                           # Use Browserbase's proxy network
-    proxy_geo: Optional[str] = None                  # Geo target: "IN", "US", etc.
-    use_stealth: bool = True                         # Enable Browserbase stealth mode
-    solve_captchas: bool = True                      # Enable managed CAPTCHA solving
-    keep_alive: bool = False                         # Keep session alive after disconnect
-    context_id: Optional[str] = None                 # Browserbase Context ID for cookie persistence
+    use_proxy: bool = True  # Use Browserbase's proxy network
+    proxy_geo: Optional[str] = None  # Geo target: "IN", "US", etc.
+    use_stealth: bool = True  # Enable Browserbase stealth mode
+    solve_captchas: bool = True  # Enable managed CAPTCHA solving
+    keep_alive: bool = False  # Keep session alive after disconnect
+    context_id: Optional[str] = None  # Browserbase Context ID for cookie persistence
 
     def __post_init__(self):
         """Validate browser provider configuration."""
         valid_types = ["local", "browserbase"]
         if self.type not in valid_types:
-            raise ValueError(f"Invalid browser type: {self.type}. Must be one of {valid_types}")
+            raise ValueError(
+                f"Invalid browser type: {self.type}. Must be one of {valid_types}"
+            )
 
 
 @dataclass
@@ -407,7 +433,9 @@ class ScrapeConfig:
 
         # Parse form fill
         form_fill_data = data.get("form_fill", {})
-        form_fill = FormFillConfig(**form_fill_data) if form_fill_data else FormFillConfig()
+        form_fill = (
+            FormFillConfig(**form_fill_data) if form_fill_data else FormFillConfig()
+        )
 
         # Parse crawler
         crawler_data = data.get("crawler", {})
@@ -415,7 +443,9 @@ class ScrapeConfig:
 
         # Parse session strategy
         session_data = data.get("session_strategy", {})
-        session_strategy = SessionStrategy(**session_data) if session_data else SessionStrategy()
+        session_strategy = (
+            SessionStrategy(**session_data) if session_data else SessionStrategy()
+        )
 
         # Parse proxy settings
         proxy_data = data.get("proxy", {})
@@ -461,18 +491,24 @@ class ScrapeConfig:
                     "user_agent": p.user_agent,
                     "locale": p.locale,
                     "timezone_id": p.timezone_id,
-                    **({"native": {
-                        "appium_server": p.native.appium_server,
-                        "app_package": p.native.app_package,
-                        "app_activity": p.native.app_activity,
-                        "bundle_id": p.native.bundle_id,
-                        "apk_path": p.native.apk_path,
-                        "ipa_path": p.native.ipa_path,
-                        "avd_name": p.native.avd_name,
-                        "simulator_udid": p.native.simulator_udid,
-                        "device_name": p.native.device_name,
-                        "platform_version": p.native.platform_version,
-                    }} if p.native else {}),
+                    **(
+                        {
+                            "native": {
+                                "appium_server": p.native.appium_server,
+                                "app_package": p.native.app_package,
+                                "app_activity": p.native.app_activity,
+                                "bundle_id": p.native.bundle_id,
+                                "apk_path": p.native.apk_path,
+                                "ipa_path": p.native.ipa_path,
+                                "avd_name": p.native.avd_name,
+                                "simulator_udid": p.native.simulator_udid,
+                                "device_name": p.native.device_name,
+                                "platform_version": p.native.platform_version,
+                            }
+                        }
+                        if p.native
+                        else {}
+                    ),
                 }
                 for p in self.platforms
             ],

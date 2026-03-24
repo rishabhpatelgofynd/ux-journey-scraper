@@ -9,6 +9,7 @@ Uses 4-strategy detection:
 
 Plus priority scoring and honeypot filtering.
 """
+
 import logging
 from typing import Any, Dict, List
 
@@ -258,12 +259,14 @@ class ElementIntelligence:
             Priority score (0-100)
         """
         # Combine text fields for keyword matching
-        combined_text = " ".join([
-            element.get("text", ""),
-            element.get("href", ""),
-            element.get("aria_label", ""),
-            element.get("role", ""),
-        ]).lower()
+        combined_text = " ".join(
+            [
+                element.get("text", ""),
+                element.get("href", ""),
+                element.get("aria_label", ""),
+                element.get("role", ""),
+            ]
+        ).lower()
 
         # Find highest matching keyword priority
         max_priority = 0
@@ -371,11 +374,13 @@ class ElementIntelligence:
                 continue
 
             # Pattern exclusion
-            combined_text = " ".join([
-                el.get("text", ""),
-                el.get("href", ""),
-                el.get("aria_label", ""),
-            ]).lower()
+            combined_text = " ".join(
+                [
+                    el.get("text", ""),
+                    el.get("href", ""),
+                    el.get("aria_label", ""),
+                ]
+            ).lower()
 
             excluded = False
             for pattern in exclude_patterns:

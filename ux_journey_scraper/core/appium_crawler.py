@@ -6,6 +6,7 @@ Public interface matches AutonomousCrawler:
     journey = await crawler.crawl()
     stats   = crawler.get_stats()
 """
+
 import asyncio
 import base64
 import logging
@@ -121,7 +122,9 @@ class AppiumCrawler:
                 (c for c in contexts if "WEBVIEW" in c or "CHROMIUM" in c), None
             )
             if not webview_ctx:
-                logger.warning("No WebView context found — falling back to native crawl")
+                logger.warning(
+                    "No WebView context found — falling back to native crawl"
+                )
                 await self._crawl_native(driver, journey)
                 return
 
@@ -146,7 +149,9 @@ class AppiumCrawler:
                 screenshot_b64 = driver.get_screenshot_as_base64()
 
                 try:
-                    elements = driver.find_elements("css selector", "button, a, [role='button']")
+                    elements = driver.find_elements(
+                        "css selector", "button, a, [role='button']"
+                    )
                     element_summary = "|".join(
                         (e.text or "")[:30] for e in elements[:10]
                     )
@@ -156,7 +161,9 @@ class AppiumCrawler:
                 if self.state_registry.has_seen(screenshot_b64, element_summary):
                     consecutive_dupes += 1
                     if consecutive_dupes >= _MAX_BACK_ATTEMPTS:
-                        logger.debug("WebView dead-end after %d dupes", consecutive_dupes)
+                        logger.debug(
+                            "WebView dead-end after %d dupes", consecutive_dupes
+                        )
                         break
                     self.gesture_engine.scroll_down(driver, self.platform.type)
                     await asyncio.sleep(0.5)
@@ -206,7 +213,9 @@ class AppiumCrawler:
 
         while pages < max_pages:
             screenshot_b64 = driver.get_screenshot_as_base64()
-            elements = self.element_detector.find_interactive(driver, self.platform.type)
+            elements = self.element_detector.find_interactive(
+                driver, self.platform.type
+            )
             element_summary = "|".join(e.text for e in elements[:10])
 
             if self.state_registry.has_seen(screenshot_b64, element_summary):
@@ -290,7 +299,9 @@ class AppiumCrawler:
         except Exception as exc:
             logger.debug(f"Permission dialog check error: {exc}")
 
-    async def _capture_screen(self, driver, step_num: int, description: str) -> JourneyStep:
+    async def _capture_screen(
+        self, driver, step_num: int, description: str
+    ) -> JourneyStep:
         """
         Capture the current screen and save as a PNG.
 

@@ -6,6 +6,7 @@ Includes critical safety features:
 - Payment submit safeguard (prevents real purchases)
 - Human-like typing simulation
 """
+
 import asyncio
 import logging
 import re
@@ -153,7 +154,9 @@ class FormFiller:
             # Handle payment form safeguard
             if result["payment_detected"]:
                 if self.PAYMENT_SUBMIT_SAFEGUARD:
-                    logger.warning("PAYMENT FORM DETECTED - Fields filled but will NOT submit")
+                    logger.warning(
+                        "PAYMENT FORM DETECTED - Fields filled but will NOT submit"
+                    )
                     result["payment_submitted"] = False
                 else:
                     raise RuntimeError(

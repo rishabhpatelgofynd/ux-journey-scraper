@@ -2,27 +2,27 @@
 """
 Unit tests for session splitting components.
 """
-import unittest
-import json
 import asyncio
+import json
+import sys
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import sys
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ux_journey_scraper.config.scrape_config import (
-    ScrapeConfig,
-    SessionStrategy,
-    ProxySettings,
+    AuthConfig,
     BrowserProvider,
     PlatformConfig,
-    AuthConfig,
+    ProxySettings,
+    ScrapeConfig,
+    SessionStrategy,
 )
 from ux_journey_scraper.core.cookie_jar import CookieJar
-from ux_journey_scraper.core.session_planner import SessionPlanner, VisitPlan
 from ux_journey_scraper.core.proxy_rotator import ProxyRotator
+from ux_journey_scraper.core.session_planner import SessionPlanner, VisitPlan
 
 
 class TestSessionStrategy(unittest.TestCase):
@@ -49,7 +49,7 @@ class TestSessionStrategy(unittest.TestCase):
             min_cooldown_sec=60,
             max_cooldown_sec=300,
             persist_cookies=False,
-            rotate_ip_per_session=True
+            rotate_ip_per_session=True,
         )
 
         self.assertEqual(strategy.mode, "continuous")
@@ -78,7 +78,7 @@ class TestProxySettings(unittest.TestCase):
             endpoint_env="MY_PROXY_URL",
             rotate_per="request",
             pool_size=10,
-            geo="US"
+            geo="US",
         )
 
         self.assertTrue(proxy.enabled)
@@ -109,7 +109,7 @@ class TestBrowserProvider(unittest.TestCase):
             api_key_env="MY_API_KEY",
             project_id_env="MY_PROJECT_ID",
             use_proxy=False,
-            solve_captchas=False
+            solve_captchas=False,
         )
 
         self.assertEqual(browser.type, "browserbase")
@@ -136,66 +136,72 @@ class TestCookieJar(unittest.TestCase):
 
         test_cookies = [
             {
-                'name': 'session_id',
-                'value': 'abc123',
-                'domain': 'example.com',
-                'path': '/'
+                "name": "session_id",
+                "value": "abc123",
+                "domain": "example.com",
+                "path": "/",
             },
             {
-                'name': 'user_pref',
-                'value': 'dark_mode',
-                'domain': 'example.com',
-                'path': '/'
-            }
+                "name": "user_pref",
+                "value": "dark_mode",
+                "domain": "example.com",
+                "path": "/",
+            },
         ]
 
         # Update cookies
-        jar.update('example.com', test_cookies)
+        jar.update("example.com", test_cookies)
 
         # Retrieve cookies
-        retrieved = jar.get('example.com')
+        retrieved = jar.get("example.com")
 
         self.assertEqual(len(retrieved), 2)
-        self.assertEqual(retrieved[0]['name'], 'session_id')
-        self.assertEqual(retrieved[0]['value'], 'abc123')
+        self.assertEqual(retrieved[0]["name"], "session_id")
+        self.assertEqual(retrieved[0]["value"], "abc123")
 
     def test_has_cookies(self):
         """Test checking if cookies exist."""
         jar = CookieJar(persist_path=self.data_dir / "cookies.json")
 
         # No cookies initially
-        self.assertFalse(jar.has_cookies('example.com'))
+        self.assertFalse(jar.has_cookies("example.com"))
 
         # Add cookies
-        jar.update('example.com', [{'name': 'test', 'value': '123', 'domain': 'example.com'}])
+        jar.update(
+            "example.com", [{"name": "test", "value": "123", "domain": "example.com"}]
+        )
 
         # Should have cookies now
-        self.assertTrue(jar.has_cookies('example.com'))
+        self.assertTrue(jar.has_cookies("example.com"))
 
     def test_clear_cookies(self):
         """Test clearing cookies."""
         jar = CookieJar(persist_path=self.data_dir / "cookies.json")
 
-        jar.update('example.com', [{'name': 'test', 'value': '123', 'domain': 'example.com'}])
-        self.assertTrue(jar.has_cookies('example.com'))
+        jar.update(
+            "example.com", [{"name": "test", "value": "123", "domain": "example.com"}]
+        )
+        self.assertTrue(jar.has_cookies("example.com"))
 
-        jar.clear('example.com')
-        self.assertFalse(jar.has_cookies('example.com'))
+        jar.clear("example.com")
+        self.assertFalse(jar.has_cookies("example.com"))
 
     def test_persistence_to_disk(self):
         """Test cookies persist to disk."""
         persist_path = self.data_dir / "cookies.json"
         jar1 = CookieJar(persist_path=persist_path)
-        jar1.update('example.com', [{'name': 'test', 'value': '123', 'domain': 'example.com'}])
+        jar1.update(
+            "example.com", [{"name": "test", "value": "123", "domain": "example.com"}]
+        )
 
         # Create new jar instance (simulates restart)
         jar2 = CookieJar(persist_path=persist_path)
         jar2.load_from_disk()
 
         # Should have cookies from previous instance
-        self.assertTrue(jar2.has_cookies('example.com'))
-        cookies = jar2.get('example.com')
-        self.assertEqual(cookies[0]['name'], 'test')
+        self.assertTrue(jar2.has_cookies("example.com"))
+        cookies = jar2.get("example.com")
+        self.assertEqual(cookies[0]["name"], "test")
 
 
 class TestSessionPlanner(unittest.TestCase):
@@ -233,7 +239,7 @@ class TestSessionPlanner(unittest.TestCase):
         # Each plan should have proper structure
         for plan in plans:
             self.assertIsInstance(plan, VisitPlan)
-            self.assertTrue(plan.session_id.startswith('visit_'))
+            self.assertTrue(plan.session_id.startswith("visit_"))
             self.assertIn(plan.auth_state, ["logged_out", "logged_in"])
             self.assertEqual(plan.platform, self.platform)
 
@@ -252,9 +258,7 @@ class TestSessionPlanner(unittest.TestCase):
 
     def test_proxy_slot_assignment(self):
         """Test proxy slots are assigned within pool bounds."""
-        config = self._make_config(
-            proxy=ProxySettings(enabled=True, pool_size=3)
-        )
+        config = self._make_config(proxy=ProxySettings(enabled=True, pool_size=3))
         plans = SessionPlanner().plan(config)
 
         for plan in plans:
@@ -279,13 +283,12 @@ class TestProxyRotator(unittest.TestCase):
     def test_rotating_proxy_provider(self):
         """Test rotating proxy provider."""
         settings = ProxySettings(
-            enabled=True,
-            provider="rotating",
-            endpoint_env="PROXY_URL"
+            enabled=True, provider="rotating", endpoint_env="PROXY_URL"
         )
 
         # Mock environment variable
         import os
+
         os.environ["PROXY_URL"] = "http://proxy.example.com:8080"
 
         try:
@@ -295,7 +298,7 @@ class TestProxyRotator(unittest.TestCase):
             proxy1 = rotator.get_for_slot(0)
             proxy2 = rotator.get_for_slot(1)
 
-            self.assertEqual(proxy1['server'], "http://proxy.example.com:8080")
+            self.assertEqual(proxy1["server"], "http://proxy.example.com:8080")
             self.assertEqual(proxy1, proxy2)
 
         finally:
@@ -303,11 +306,7 @@ class TestProxyRotator(unittest.TestCase):
 
     def test_pool_based_rotation(self):
         """Test pool-based proxy rotation."""
-        settings = ProxySettings(
-            enabled=True,
-            provider="residential",
-            pool_size=3
-        )
+        settings = ProxySettings(enabled=True, provider="residential", pool_size=3)
 
         rotator = ProxyRotator(settings)
 
@@ -325,6 +324,7 @@ class TestProxyRotator(unittest.TestCase):
     def test_next_rotation(self):
         """Test next() method rotates."""
         import os
+
         os.environ["PROXY_URL"] = "http://proxy.example.com:8080"
 
         try:
@@ -350,5 +350,5 @@ class TestProxyRotator(unittest.TestCase):
             del os.environ["PROXY_URL"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

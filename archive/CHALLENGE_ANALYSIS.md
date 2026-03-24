@@ -11,14 +11,18 @@
 ### 1. Browser & JavaScript Limitations
 
 #### ❌ WHAT IF: Website uses heavy AJAX/SPA with client-side rendering?
+
 **Current Behavior:**
+
 - Wait
 
 s for `networkidle` (line 173, 199 in journey_recorder.py)
+
 - Assumes content loads within networkidle state
 - **FAILS IF:** Content loads after networkidle (lazy loading, infinite scroll, polling)
 
 **Example Failures:**
+
 - React/Vue apps with delayed hydration
 - Infinite scroll (Instagram, Twitter)
 - Content that loads on scroll intersection observers
@@ -27,6 +31,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Missing critical UI elements, incomplete screenshots
 
 **Solution Needed:**
+
 - Add configurable wait strategies (wait for selector, wait for function)
 - Smart scroll to trigger lazy-loaded content
 - Custom wait conditions per URL pattern
@@ -35,12 +40,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Website blocks headless browsers?
+
 **Current Behavior:**
+
 - Uses Playwright with headless flag (line 164)
 - No stealth mode enabled
 - **FAILS IF:** Website detects headless Chrome (navigator.webdriver, missing plugins)
 
 **Detection Methods Websites Use:**
+
 - `navigator.webdriver === true` (headless indicator)
 - Missing window.chrome properties
 - Inconsistent navigator properties
@@ -51,6 +59,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Immediate block, CAPTCHA, or degraded content
 
 **Solution Needed:**
+
 - Use stealth plugins (playwright-extra-plugin-stealth)
 - Randomize user agent strings
 - Add realistic browser fingerprints
@@ -59,12 +68,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Website uses Shadow DOM extensively?
+
 **Current Behavior:**
+
 - BeautifulSoup parses static HTML (line 26, page_analyzer.py)
 - Playwright queries don't pierce shadow roots by default
 - **FAILS IF:** Critical elements are in closed shadow DOM
 
 **Example Failures:**
+
 - Web components with shadow DOM
 - Custom element libraries (Polymer, LitElement)
 - Modern design systems
@@ -72,6 +84,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Missing buttons, forms, CTAs in analysis
 
 **Solution Needed:**
+
 - Enable shadow DOM piercing in Playwright
 - Use `element.shadowRoot` traversal
 - Detect and warn about shadow DOM usage
@@ -81,7 +94,9 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 2. Screenshot & PII Limitations
 
 #### ❌ WHAT IF: Screenshot contains PII in Canvas/WebGL/SVG?
+
 **Current Behavior:**
+
 - Only blurs DOM elements with bounding boxes (line 91-133, screenshot_manager.py)
 - **FAILS IF:** PII rendered as:
   - Canvas-based charts with user data
@@ -91,6 +106,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
   - Dynamically generated images
 
 **Example Failures:**
+
 - Charting libraries (Chart.js, D3) showing names/emails
 - PDF viewers in canvas
 - Image editors
@@ -99,6 +115,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** PII leakage in screenshots
 
 **Solution Needed:**
+
 - OCR-based text detection in screenshots
 - Canvas/SVG content analysis
 - Option to black out entire regions
@@ -107,7 +124,9 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: PII detection misses edge cases?
+
 **Current Behavior:**
+
 - Regex patterns for email, credit card, phone, SSN (lines 15-18)
 - Only checks first 100 text elements (line 171)
 - **FAILS IF:**
@@ -119,6 +138,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
   - Date of birth, bank accounts
 
 **Example Failures:**
+
 - European phone: +44 20 7946 0958
 - Email: `user(at)example.com` or `user @ example.com`
 - Passport: AB1234567
@@ -127,6 +147,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Partial PII leakage
 
 **Solution Needed:**
+
 - Expand regex patterns (international formats)
 - Named entity recognition (NER) for names/addresses
 - Configurable PII patterns per region
@@ -136,7 +157,9 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Screenshot fails due to viewport issues?
+
 **Current Behavior:**
+
 - Uses `full_page=True` for screenshots (line 83)
 - **FAILS IF:**
   - Page has dynamic height (infinite scroll)
@@ -145,6 +168,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
   - Page has extremely long content (memory limit)
 
 **Example Failures:**
+
 - 10,000px long landing page crashes
 - Sticky header appears 100 times in screenshot
 - Scroll-triggered video plays and breaks capture
@@ -152,6 +176,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Corrupted screenshots, memory crashes
 
 **Solution Needed:**
+
 - Viewport-based screenshots with pagination
 - Option to disable `full_page`
 - Max height limit with warning
@@ -162,7 +187,9 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 3. Navigation & Journey Recording Limitations
 
 #### ❌ WHAT IF: Journey involves forms/authentication?
+
 **Current Behavior:**
+
 - Can only observe passive navigation (URL changes, line 197-201)
 - No form interaction automation
 - **FAILS IF:** User flow requires:
@@ -173,6 +200,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
   - File uploads
 
 **Example Failures:**
+
 - Multi-step checkout (same URL, different steps)
 - Modal-based workflows
 - Single-page apps with client-side routing only
@@ -181,6 +209,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Cannot record 90% of real user journeys
 
 **Solution Needed:**
+
 - Add interaction recording (clicks, form fills, hovers)
 - Support for manual trigger: "Press Enter to record step"
 - DOM mutation observer to detect state changes
@@ -189,12 +218,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Website has rate limiting?
+
 **Current Behavior:**
+
 - Fixed 2-second delay between pages (line 286, automated mode)
 - 1-second polling in interactive mode (line 194)
 - **FAILS IF:** Website has aggressive rate limiting
 
 **Example Failures:**
+
 - Cloudflare rate limiting (429 errors)
 - IP-based blocking after X requests
 - Progressive delays (first request OK, subsequent blocked)
@@ -202,6 +234,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Partial journey capture, blocks
 
 **Solution Needed:**
+
 - Configurable delays (min/max random)
 - Exponential backoff on errors
 - Respect Retry-After headers
@@ -211,11 +244,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Website uses CAPTCHAs?
+
 **Current Behavior:**
+
 - No CAPTCHA handling
 - **FAILS IF:** CAPTCHA appears during journey
 
 **Example Failures:**
+
 - Google reCAPTCHA
 - hCaptcha
 - Custom image CAPTCHAs
@@ -224,6 +260,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Journey stops, cannot proceed
 
 **Solution Needed:**
+
 - CAPTCHA detection (pause and alert user)
 - Integration with CAPTCHA solving services (for authorized testing)
 - Manual intervention mode
@@ -232,11 +269,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Website has geo-restrictions?
+
 **Current Behavior:**
+
 - Uses local IP address
 - **FAILS IF:** Content is geo-restricted
 
 **Example Failures:**
+
 - EU-only content (GDPR)
 - US-only services
 - Country-specific pricing/products
@@ -244,6 +284,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Different content than real users see
 
 **Solution Needed:**
+
 - Proxy/VPN support
 - Geo-location header injection
 - Document geo-restrictions in report
@@ -254,13 +295,16 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 4. Data Analysis Limitations
 
 #### ❌ WHAT IF: Page has 1000+ buttons?
+
 **Current Behavior:**
+
 - Limits to first 50 buttons (line 194, page_analyzer.py)
 - Limits to first 100 links (line 221)
 - Limits to first 20 footer links (line 181)
 - **FAILS IF:** Critical elements are after the limit
 
 **Example Failures:**
+
 - Large e-commerce catalogs
 - Admin dashboards with many actions
 - Data tables with row-level buttons
@@ -268,6 +312,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Incomplete UX analysis, missed violations
 
 **Solution Needed:**
+
 - Smart sampling (prioritize visible, above-the-fold)
 - Configurable limits
 - Warn when limits exceeded
@@ -276,11 +321,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: CTA text is in a language other than English?
+
 **Current Behavior:**
+
 - Hardcoded English CTA texts (lines 100-113, page_analyzer.py)
 - **FAILS IF:** Website is not in English
 
 **Example Failures:**
+
 - Spanish: "Comprar ahora" not detected
 - French: "Ajouter au panier" not detected
 - Chinese: "立即购买" not detected
@@ -289,6 +337,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Missing CTAs in analysis
 
 **Solution Needed:**
+
 - Multi-language CTA patterns
 - Translate button text before detection
 - Use aria-labels/semantic HTML instead of text
@@ -299,11 +348,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 5. Robots.txt & Ethics Limitations
 
 #### ❌ WHAT IF: robots.txt check fails/times out?
+
 **Current Behavior:**
+
 - Allows by default if robots.txt can't be read (line 37-38, robots_checker.py)
 - **FAILS IF:** This is too permissive
 
 **Example Failures:**
+
 - Network timeout allows scraping restricted site
 - DNS issues bypass robots.txt
 - Server error (500) on /robots.txt allows scraping
@@ -311,6 +363,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Unethical scraping of restricted content
 
 **Solution Needed:**
+
 - Fail closed (deny if robots.txt check fails)
 - Retry logic with backoff
 - Cache robots.txt with TTL
@@ -319,18 +372,22 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Website updates robots.txt during scraping?
+
 **Current Behavior:**
+
 - Caches robots.txt per domain (line 29, robots_checker.py)
 - Never refreshes cache
 - **FAILS IF:** robots.txt changes mid-journey
 
 **Example Failures:**
+
 - Site blocks scraping after first page
 - Time-based restrictions (only allow 9am-5pm)
 
 **Impact:** Violating updated robots.txt
 
 **Solution Needed:**
+
 - TTL-based cache expiration
 - Re-check robots.txt periodically
 - Respect Cache-Control headers
@@ -340,12 +397,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 6. Performance & Resource Limitations
 
 #### ❌ WHAT IF: Journey has 100+ steps?
+
 **Current Behavior:**
+
 - Unlimited steps allowed
 - Keeps all data in memory
 - **FAILS IF:** Memory limit exceeded
 
 **Example Failures:**
+
 - Long e-commerce browsing session
 - Content-heavy pages with large HTML
 - Many high-resolution screenshots
@@ -353,6 +413,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Out-of-memory crash, data loss
 
 **Solution Needed:**
+
 - Streaming to disk (don't keep all in memory)
 - Compression of HTML/screenshots
 - Max steps limit with warning
@@ -361,12 +422,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Page load hangs/times out?
+
 **Current Behavior:**
+
 - 30-second timeout for page.goto (line 279)
 - 10-second timeout for networkidle (line 280)
 - **FAILS IF:** Timeout is too short or too long
 
 **Example Failures:**
+
 - Very slow server (30s not enough)
 - Waiting 30s for every broken page
 - networkidle never triggers (websockets)
@@ -374,6 +438,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Skipped pages or excessive waiting
 
 **Solution Needed:**
+
 - Configurable timeouts per site
 - Adaptive timeouts (learn from previous pages)
 - Parallel timeout strategies (race conditions)
@@ -382,12 +447,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Browser crashes mid-journey?
+
 **Current Behavior:**
+
 - No crash recovery
 - Journey data lost if not saved
 - **FAILS IF:** Playwright/Chromium crashes
 
 **Example Failures:**
+
 - Out of memory
 - GPU driver issue
 - Chromium bug
@@ -396,6 +464,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Complete data loss
 
 **Solution Needed:**
+
 - Auto-save checkpoints every N steps
 - Resume from last checkpoint
 - Browser restart/retry logic
@@ -406,11 +475,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 7. Accessibility & Modern Web Limitations
 
 #### ❌ WHAT IF: Website uses iframes extensively?
+
 **Current Behavior:**
+
 - No iframe handling
 - **FAILS IF:** Critical content is in iframes
 
 **Example Failures:**
+
 - Embedded payment forms (Stripe)
 - Third-party widgets (chat, calendars)
 - Advertising iframes
@@ -419,6 +491,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Missing content in screenshots/analysis
 
 **Solution Needed:**
+
 - Detect iframes
 - Capture iframe screenshots separately
 - Analyze iframe content
@@ -427,11 +500,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Website uses Web Workers/Service Workers?
+
 **Current Behavior:**
+
 - No awareness of background workers
 - **FAILS IF:** Content is rendered by workers
 
 **Example Failures:**
+
 - Offline-first PWAs
 - Background data fetching
 - Service worker caching affecting content
@@ -439,6 +515,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Stale or incorrect content captured
 
 **Solution Needed:**
+
 - Detect service workers
 - Clear service worker cache option
 - Wait for worker completion
@@ -447,11 +524,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Website uses WebSockets/Server-Sent Events?
+
 **Current Behavior:**
+
 - "networkidle" doesn't account for persistent connections
 - **FAILS IF:** Content updates via WebSocket
 
 **Example Failures:**
+
 - Real-time dashboards
 - Live chat
 - Stock tickers
@@ -460,6 +540,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Capture static state, miss updates
 
 **Solution Needed:**
+
 - Detect WebSocket connections
 - Custom wait for WebSocket messages
 - Periodic re-capture option
@@ -470,11 +551,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 8. Error Handling & Edge Cases
 
 #### ❌ WHAT IF: Page throws JavaScript errors?
+
 **Current Behavior:**
+
 - No JavaScript error handling
 - **FAILS IF:** Page has console errors
 
 **Example Failures:**
+
 - Broken JavaScript (page partially functional)
 - Third-party script errors
 - Ad blocker conflicts
@@ -482,6 +566,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Partial page rendering, inconsistent state
 
 **Solution Needed:**
+
 - Listen to console errors
 - Log JavaScript errors to journey
 - Option to abort on errors
@@ -490,12 +575,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Page redirects during recording?
+
 **Current Behavior:**
+
 - Follows redirects automatically (Playwright default)
 - URL change detection (line 197)
 - **FAILS IF:** Redirect chain is complex
 
 **Example Failures:**
+
 - Multiple redirects (301 → 302 → 200)
 - JavaScript redirect vs HTTP redirect
 - Meta refresh redirects
@@ -503,6 +591,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Missed intermediate pages
 
 **Solution Needed:**
+
 - Capture redirect chain
 - Option to record each redirect
 - Distinguish redirect types
@@ -511,11 +600,14 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Screenshots consume too much disk space?
+
 **Current Behavior:**
+
 - Saves full-page PNGs (uncompressed)
 - **FAILS IF:** 100 steps × 5MB each = 500MB
 
 **Example Failures:**
+
 - Long journeys fill disk
 - CI/CD runners run out of space
 - Expensive S3/cloud storage
@@ -523,6 +615,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Disk full, process failure
 
 **Solution Needed:**
+
 - Compress screenshots (lossy/lossless)
 - Configurable quality/format (JPEG, WebP)
 - Thumbnail generation
@@ -533,12 +626,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 9. Security & Privacy Limitations
 
 #### ❌ WHAT IF: User accidentally scans their banking site?
+
 **Current Behavior:**
+
 - Will happily scrape any site (if robots.txt allows)
 - Stores credentials in screenshots if visible
 - **FAILS IF:** Ethics/privacy concern
 
 **Example Failures:**
+
 - Banking details in screenshots
 - Medical records (HIPAA violation)
 - Employee data (privacy violation)
@@ -546,6 +642,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Legal/ethical issues
 
 **Solution Needed:**
+
 - Warn about sensitive sites (banking, health)
 - Blocklist for known sensitive domains
 - Extra confirmation for HTTPS sites
@@ -554,18 +651,22 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: Journey data contains malicious content?
+
 **Current Behavior:**
+
 - Stores raw HTML in JSON (line 38, page_analyzer.py)
 - No sanitization
 - **FAILS IF:** HTML contains XSS payloads
 
 **Example Failures:**
+
 - Loading journey in HTML reporter executes scripts
 - JSON injection attacks
 
 **Impact:** XSS in HTML reports
 
 **Solution Needed:**
+
 - Sanitize HTML before storing
 - Use text nodes instead of innerHTML
 - CSP headers in HTML reports
@@ -576,12 +677,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### 10. Usability & UX Limitations
 
 #### ❌ WHAT IF: User wants to record mobile journeys?
+
 **Current Behavior:**
+
 - Supports viewport size (line 104)
 - But no mobile-specific features
 - **FAILS IF:** Mobile-specific behavior needed
 
 **Example Failures:**
+
 - Touch events vs mouse events
 - Mobile keyboard
 - Orientation changes
@@ -590,6 +694,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Desktop simulation, not real mobile
 
 **Solution Needed:**
+
 - Mobile device emulation
 - Touch event simulation
 - Screen orientation testing
@@ -598,12 +703,15 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ---
 
 #### ❌ WHAT IF: User makes a mistake during recording?
+
 **Current Behavior:**
+
 - Can only stop with Ctrl+C (line 203)
 - No undo/delete step
 - **FAILS IF:** User accidentally navigates to wrong page
 
 **Example Failures:**
+
 - Click wrong link
 - Want to re-record a step
 - Accidentally trigger auto-play video
@@ -611,6 +719,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 **Impact:** Journey contaminated, must restart
 
 **Solution Needed:**
+
 - Interactive controls (skip step, redo, pause)
 - Step deletion
 - Journey editing after recording
@@ -623,6 +732,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### Testing & Monitoring UX
 
 **Missing:**
+
 1. A/B test detection (same URL, different variants)
 2. Personalization detection (content changes per user)
 3. Time-of-day variations
@@ -634,6 +744,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### Advanced Analysis
 
 **Missing:**
+
 1. Performance metrics (page load time, FCP, LCP)
 2. Accessibility scoring (contrast ratios, ARIA)
 3. SEO analysis
@@ -645,6 +756,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ### Reporting & Output
 
 **Missing:**
+
 1. Video recording option
 2. HAR file export (network waterfall)
 3. Performance traces
@@ -668,6 +780,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ## 🎯 RECOMMENDED IMMEDIATE FIXES (Priority Order)
 
 ### P0 - Critical (Breaks Common Use Cases)
+
 1. ✅ **Shadow DOM support** - Modern sites use this extensively
 2. ✅ **Form interaction recording** - 90% of journeys need this
 3. ✅ **Lazy loading detection** - Wait for scroll-triggered content
@@ -675,6 +788,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 5. ✅ **International PII patterns** - Not just US formats
 
 ### P1 - High (Significant Gaps)
+
 6. ✅ **Canvas/SVG PII detection** - OCR or blackout regions
 7. ✅ **CAPTCHA detection** - Pause and warn user
 8. ✅ **Memory limits** - Stream to disk, don't keep all in memory
@@ -682,6 +796,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 10. ✅ **Iframe handling** - Capture nested content
 
 ### P2 - Medium (Nice to Have)
+
 11. Multi-language CTA detection
 12. Adaptive timeouts
 13. Screenshot compression
@@ -693,41 +808,49 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ## 📋 TESTING SCENARIOS
 
 ### Scenario 1: Heavy JavaScript SPA
+
 **Site:** Gmail, Facebook, Twitter
 **Expected Failure:** Content not fully loaded
 **Test:** Run scraper, check if all interactive elements captured
 
 ### Scenario 2: E-commerce Checkout
+
 **Site:** Amazon, Shopify store
 **Expected Failure:** Cannot record multi-step checkout (same URL)
 **Test:** Try recording checkout flow
 
 ### Scenario 3: Infinite Scroll
+
 **Site:** Instagram, Pinterest
 **Expected Failure:** Only captures first viewport
 **Test:** Check if lazy-loaded content appears
 
 ### Scenario 4: Canvas-based Charts
+
 **Site:** Analytics dashboards
 **Expected Failure:** PII in charts not blurred
 **Test:** Verify chart text is detected
 
 ### Scenario 5: Non-English Site
+
 **Site:** Chinese e-commerce site
 **Expected Failure:** CTAs not detected
 **Test:** Check CTA extraction results
 
 ### Scenario 6: 1000+ Step Journey
+
 **Site:** Wikipedia browsing
 **Expected Failure:** Memory crash
 **Test:** Record long session, monitor RAM
 
 ### Scenario 7: CAPTCHA-Protected Site
+
 **Site:** Cloudflare-protected site
 **Expected Failure:** Journey stops at CAPTCHA
 **Test:** Trigger CAPTCHA, observe behavior
 
 ### Scenario 8: WebSocket Real-time Site
+
 **Site:** Trading platform, chat app
 **Expected Failure:** Static snapshot of dynamic content
 **Test:** Verify real-time updates captured
@@ -786,6 +909,7 @@ s for `networkidle` (line 173, 199 in journey_recorder.py)
 ## 📝 CONCLUSION
 
 The UX Journey Scraper is **solid for basic use cases** but has **critical gaps** for:
+
 - Modern JavaScript SPAs
 - Interactive workflows (forms, modals)
 - International/multi-language sites
@@ -795,6 +919,7 @@ The UX Journey Scraper is **solid for basic use cases** but has **critical gaps*
 **Recommendation:** Implement P0 fixes before promoting for production use.
 
 **Estimated Impact:**
+
 - P0 fixes → Expand usable sites from 30% to 80%
 - P1 fixes → Expand from 80% to 95%
 - P2 fixes → Expand from 95% to 99%

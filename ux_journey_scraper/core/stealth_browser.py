@@ -7,13 +7,14 @@ Public API:
 
 Every module calls this — never create browsers directly.
 """
-import os
+
 import logging
-from typing import Optional, Tuple, Dict
+import os
+from typing import Dict, Optional, Tuple
 
-from playwright.async_api import Playwright, Browser, BrowserContext
+from playwright.async_api import Browser, BrowserContext, Playwright
 
-from ..config.scrape_config import ScrapeConfig, PlatformConfig, BrowserProvider
+from ..config.scrape_config import BrowserProvider, PlatformConfig, ScrapeConfig
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +172,7 @@ async def create_stealth_browser(
 # LOCAL PROVIDER (Patchright)
 # ──────────────────────────────────────────────────
 
+
 async def _create_local_patchright(
     config: ScrapeConfig,
     platform: PlatformConfig,
@@ -184,11 +186,13 @@ async def _create_local_patchright(
     # Try patchright first, fall back to playwright
     try:
         from patchright.async_api import async_playwright as async_patchright
+
         pw = await async_patchright().start()
         logger.debug("Using patchright (enhanced anti-detection)")
     except ImportError:
         logger.debug("patchright not available, using standard playwright")
         from playwright.async_api import async_playwright
+
         pw = await async_playwright().start()
 
     # Proxy: override > config > None
@@ -216,7 +220,9 @@ async def _create_local_patchright(
         java_script_enabled=True,
         has_touch=platform.type in ("web_mobile", "web_tablet"),
         is_mobile=platform.type == "web_mobile",
-        device_scale_factor=2.0 if platform.type in ("web_mobile", "web_tablet") else 1.0,
+        device_scale_factor=(
+            2.0 if platform.type in ("web_mobile", "web_tablet") else 1.0
+        ),
         extra_http_headers={
             "Accept-Language": "en-US,en;q=0.9,hi-IN;q=0.8,hi;q=0.7",
             "Accept-Encoding": "gzip, deflate, br",
@@ -240,6 +246,7 @@ async def _create_local_patchright(
 # ──────────────────────────────────────────────────
 # CLOUD PROVIDER (Browserbase)
 # ──────────────────────────────────────────────────
+
 
 async def _create_browserbase(
     bb_config: BrowserProvider,
@@ -338,9 +345,11 @@ async def _create_browserbase(
     # Set user agent if Browserbase didn't set it from fingerprint
     # (Browserbase fingerprint usually handles this, but override for safety)
     if platform.user_agent:
-        await context.set_extra_http_headers({
-            "User-Agent": platform.user_agent,
-        })
+        await context.set_extra_http_headers(
+            {
+                "User-Agent": platform.user_agent,
+            }
+        )
 
     logger.info(f"Connected to Browserbase session: {session.id}")
 
@@ -350,6 +359,7 @@ async def _create_browserbase(
 # ──────────────────────────────────────────────────
 # SHARED UTILS
 # ──────────────────────────────────────────────────
+
 
 def _default_ua(platform_type: str) -> str:
     """Default user agents per platform type."""

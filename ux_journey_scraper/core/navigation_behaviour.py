@@ -4,9 +4,10 @@ Realistic navigation behavior for anti-detection.
 Adds human-like randomness to the crawl path: variable reading times,
 backtracking, homepage revisits, random pauses, gentle scrolling.
 """
+
 import asyncio
-import random
 import logging
+import random
 from typing import Optional
 
 from playwright.async_api import Page
@@ -17,21 +18,21 @@ logger = logging.getLogger(__name__)
 # Variable reading time per page type (seconds)
 # Real users spend different amounts of time on different pages
 PAGE_READ_TIME = {
-    "home":          (3, 8),
-    "plp":           (5, 15),      # Scrolls, compares products
-    "pdp":           (8, 30),      # Reads description, checks reviews, zooms images
-    "cart":          (3, 10),
-    "checkout":      (10, 45),     # Address entry, payment selection
-    "confirmation":  (5, 12),
-    "search":        (2, 5),
-    "login":         (3, 8),
-    "account":       (3, 8),
-    "orders":        (5, 12),
-    "order_detail":  (5, 15),
-    "tracking":      (3, 8),
-    "returns":       (5, 12),
-    "wishlist":      (3, 8),
-    "unknown":       (3, 10),
+    "home": (3, 8),
+    "plp": (5, 15),  # Scrolls, compares products
+    "pdp": (8, 30),  # Reads description, checks reviews, zooms images
+    "cart": (3, 10),
+    "checkout": (10, 45),  # Address entry, payment selection
+    "confirmation": (5, 12),
+    "search": (2, 5),
+    "login": (3, 8),
+    "account": (3, 8),
+    "orders": (5, 12),
+    "order_detail": (5, 15),
+    "tracking": (3, 8),
+    "returns": (5, 12),
+    "wishlist": (3, 8),
+    "unknown": (3, 10),
 }
 
 
@@ -107,7 +108,9 @@ class NavigationBehaviour:
             logger.debug(f"Backtrack failed: {e}")
             return False
 
-    async def maybe_revisit_home(self, page: Page, base_url: str, probability: float = 0.06) -> bool:
+    async def maybe_revisit_home(
+        self, page: Page, base_url: str, probability: float = 0.06
+    ) -> bool:
         """
         6% chance to navigate back to homepage.
         Real users do this to "reset" their browsing.
@@ -149,9 +152,7 @@ class NavigationBehaviour:
         await asyncio.sleep(pause)
 
     async def maybe_scroll_without_clicking(
-        self,
-        page: Page,
-        probability: float = 0.15
+        self, page: Page, probability: float = 0.15
     ) -> bool:
         """
         15% chance to scroll the whole page but not click anything.
@@ -169,7 +170,9 @@ class NavigationBehaviour:
 
         try:
             # Scroll to bottom in chunks
-            viewport_height = page.viewport_size.get("height", 900) if page.viewport_size else 900
+            viewport_height = (
+                page.viewport_size.get("height", 900) if page.viewport_size else 900
+            )
             scroll_steps = random.randint(3, 6)
 
             for _ in range(scroll_steps):
@@ -231,11 +234,7 @@ class NavigationBehaviour:
         self._consecutive_forward = 0
         logger.debug("NavigationBehaviour reset")
 
-    async def simulate_realistic_delay(
-        self,
-        base_delay_ms: int,
-        jitter_ms: int
-    ):
+    async def simulate_realistic_delay(self, base_delay_ms: int, jitter_ms: int):
         """
         Add realistic delay with jitter.
 

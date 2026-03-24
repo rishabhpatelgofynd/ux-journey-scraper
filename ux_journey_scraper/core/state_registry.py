@@ -6,6 +6,7 @@ Prevents infinite loops in SPAs and dynamic sites by detecting:
 2. DOM content hash (same content, different URL)
 3. Structural hash (same structure, different content)
 """
+
 import hashlib
 import re
 from typing import Set

@@ -8,6 +8,7 @@ Solves the "screenshot too early" problem with comprehensive checks:
 - Lazy-loaded content (scroll trigger)
 - Font and image loading
 """
+
 import asyncio
 import logging
 from typing import List

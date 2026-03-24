@@ -12,12 +12,14 @@
 ### Files Removed for Privacy
 
 **1. UX_VALIDATION_INTEGRATION.md** ⚠️ PRIVACY ISSUE
+
 - **Why Archived**: Referenced proprietary Baymard Institute data paths
 - **Issue**: Contained examples with `.local/baymard-scraper/data/raw/baymard_backup/processed_guidelines.json`
 - **Status**: Feature removed from public package, moved to BayMAAR (private)
 - **See**: BayMAAR repository for UX analysis features
 
 **2. examples/ux_validation_example.py** ⚠️ PRIVACY ISSUE
+
 - **Why Archived**: Example code referencing proprietary data paths
 - **Issue**: Line 20 hardcoded path to proprietary Baymard guidelines
 - **Status**: UX validation moved to private BayMAAR analysis engine
@@ -30,21 +32,25 @@
 ### Progress/Status Reports (Superseded)
 
 **3. BUILD_PROGRESS.md**
+
 - **Superseded By**: CHANGELOG.md (for version history), current README.md (for status)
 - **Content**: Build progress tracking for v0.2.0 development
 - **Date**: March 18, 2026
 
 **4. COMPLETION_SUMMARY.md**
+
 - **Superseded By**: CHANGELOG.md, README.md
 - **Content**: v0.2.0 completion summary
 - **Date**: March 18, 2026
 
 **5. PROJECT_STATUS.md**
+
 - **Superseded By**: README.md (Roadmap section), CHANGELOG.md
 - **Content**: Project status and roadmap (outdated)
 - **Date**: March 18, 2026
 
 **6. IMPLEMENTATION_STATUS.md**
+
 - **Superseded By**: CHANGELOG.md, README.md
 - **Content**: Implementation status for v0.2.0
 - **Date**: March 19, 2026
@@ -52,6 +58,7 @@
 ### Technical Analysis (Historical)
 
 **7. CHALLENGE_ANALYSIS.md**
+
 - **Superseded By**: Code comments and MIGRATION.md
 - **Content**: Technical challenges analysis during development
 - **Purpose**: Historical reference for architectural decisions
@@ -60,12 +67,14 @@
 ### Publishing Documentation (Superseded)
 
 **8. PYPI_READINESS.md**
+
 - **Superseded By**: Package published to PyPI (complete)
 - **Content**: PyPI publishing checklist and readiness assessment
 - **Status**: Package successfully published as of v0.3.0
 - **Date**: March 19, 2026
 
 **9. release-notes-v0.1.0.md**
+
 - **Superseded By**: CHANGELOG.md (all versions)
 - **Content**: Release notes for v0.1.0
 - **Current Version**: v0.3.0
@@ -92,6 +101,7 @@
 ### Active Documentation Files
 
 **Core Documentation**:
+
 - [README.md](../README.md) - Package overview, quick start, features
 - [CHANGELOG.md](../CHANGELOG.md) - Version history and changes
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
@@ -99,9 +109,11 @@
 - [MIGRATION.md](../MIGRATION.md) - Migration guides between versions
 
 **Publishing**:
+
 - [PUBLISHING.md](../PUBLISHING.md) - Publishing process and guidelines
 
 **Configuration**:
+
 - [scrape-config.example.yaml](../scrape-config.example.yaml) - Configuration template
 - [pyproject.toml](../pyproject.toml) - Package configuration
 - [setup.py](../setup.py) - Package setup
@@ -113,17 +125,20 @@
 ### Why UX Validation Was Removed
 
 **Timeline**:
+
 1. **v0.1.0** (Early 2026): Package included optional UX validation against Baymard guidelines
 2. **February 2026**: Privacy review identified data leak risk
 3. **March 2026**: UX validation features moved to BayMAAR (private mono-repository)
 4. **v0.3.0** (Current): Package is pure journey capture tool (public)
 
 **Issue**:
+
 - UX validation required access to proprietary Baymard Institute research data
 - Baymard data includes test criteria from 20,969 site implementations (proprietary)
 - Public package cannot contain or reference proprietary data
 
 **Solution**:
+
 ```
 BEFORE (v0.1.0 - WRONG):
 ┌──────────────────────────────┐
@@ -146,6 +161,7 @@ AFTER (v0.3.0 - CORRECT):
 ```
 
 **Current Architecture**:
+
 - **ux-journey-scraper** (public): Pure journey capture tool
 - **BayMAAR** (private): UX analysis engine with Baymard data
 - **Integration**: Via data files (journey.json), not code coupling
@@ -153,12 +169,14 @@ AFTER (v0.3.0 - CORRECT):
 ### Remaining Optional Code
 
 **Note**: The package still contains optional `ux_validation_enabled` parameter in `JourneyRecorder`:
+
 - **Status**: **Safe** - Disabled by default (`ux_validation_enabled=False`)
 - **Purpose**: Hook for private integration (requires external validator)
 - **No Data Leak**: Does not include Baymard data or validators
 - **Usage**: Only works when external validator provided (BayMAAR integration)
 
 This is acceptable because:
+
 1. Feature is disabled by default
 2. No proprietary data is included in the package
 3. No proprietary data paths are hardcoded
@@ -190,6 +208,7 @@ This is acceptable because:
 **Total Files**: 9 files
 
 **Categories**:
+
 - **Privacy**: 2 files (UX validation docs/code)
 - **Progress**: 4 files (status reports)
 - **Technical**: 1 file (challenge analysis)
@@ -202,17 +221,20 @@ This is acceptable because:
 ### Version History
 
 **v0.1.0** (Early 2026):
+
 - Initial release
 - Manual journey recording
 - Optional UX validation ⚠️ (privacy issue)
 
 **v0.2.0** (March 2026):
+
 - Autonomous crawling
 - Config-first approach
 - Enhanced capabilities
 - UX validation still present ⚠️
 
 **v0.3.0** (March 2026):
+
 - Pure journey capture tool
 - UX validation removed for privacy ✅
 - Public package (safe for PyPI)
@@ -231,6 +253,7 @@ This is acceptable because:
 ## Data Privacy Guidelines
 
 For the BayMAAR mono-repository, see:
+
 - [../../DATA_PRIVACY.md](../../DATA_PRIVACY.md) - Repository-wide privacy guidelines
 - [../../ARCHITECTURE.md](../../ARCHITECTURE.md) - Privacy architecture
 
@@ -241,4 +264,3 @@ For the BayMAAR mono-repository, see:
 **Files Archived**: 9 (2 privacy-sensitive, 7 superseded)
 **Current Version**: v0.3.0 (pure journey capture)
 **Privacy Status**: ✅ Compliant (no proprietary data)
-
