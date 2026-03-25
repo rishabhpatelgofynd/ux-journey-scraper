@@ -49,9 +49,12 @@ class JourneyStep:
 class Journey:
     """Represents a complete user journey."""
 
-    def __init__(self, start_url, viewport=(1920, 1080)):
+    def __init__(self, start_url, viewport=(1920, 1080),
+                 platform_type=None, user_agent=None):
         self.start_url = start_url
         self.viewport = viewport
+        self.platform_type = platform_type
+        self.user_agent = user_agent
         self.steps = []
         self.start_time = datetime.now().isoformat()
         self.end_time = None
@@ -66,7 +69,7 @@ class Journey:
 
     def to_dict(self):
         """Convert journey to dictionary."""
-        return {
+        result = {
             "start_url": self.start_url,
             "viewport": {"width": self.viewport[0], "height": self.viewport[1]},
             "start_time": self.start_time,
@@ -74,6 +77,12 @@ class Journey:
             "total_steps": len(self.steps),
             "steps": [step.to_dict() for step in self.steps],
         }
+        if self.platform_type:
+            result["platform"] = {
+                "type": self.platform_type,
+                "user_agent": self.user_agent,
+            }
+        return result
 
     def save(self, filepath):
         """Save journey to JSON file."""
@@ -87,8 +96,12 @@ class Journey:
         with open(filepath, "r") as f:
             data = json.load(f)
 
+        platform_data = data.get("platform", {})
         journey = cls(
-            data["start_url"], (data["viewport"]["width"], data["viewport"]["height"])
+            data["start_url"],
+            (data["viewport"]["width"], data["viewport"]["height"]),
+            platform_type=platform_data.get("type"),
+            user_agent=platform_data.get("user_agent"),
         )
         journey.start_time = data["start_time"]
         journey.end_time = data["end_time"]
@@ -100,9 +113,7 @@ class Journey:
                 step_data["title"],
                 step_data["screenshot_path"],
                 step_data["page_data"],
-                ux_validation=step_data.get(
-                    "ux_validation"
-                ),  # Load validation if present
+                ux_validation=step_data.get("ux_validation"),
             )
             step.timestamp = step_data["timestamp"]
             journey.steps.append(step)
@@ -204,7 +215,9 @@ class JourneyRecorder:
         print(f"🔒 PII Blur: {'Enabled' if self.blur_pii else 'Disabled'}")
         print(f"🤖 robots.txt: {'Enabled' if self.respect_robots else 'Disabled'}")
 
-        self.journey = Journey(self.start_url, self.viewport)
+        self.journey = Journey(self.start_url, self.viewport,
+                               platform_type=getattr(self, 'platform_type', None),
+                               user_agent=getattr(self, 'user_agent', None))
 
         async with async_playwright() as p:
             # Launch browser
@@ -335,7 +348,9 @@ class JourneyRecorder:
         print(f"\n🎬 Starting automated journey recording...")
         print(f"📋 URLs to record: {len(urls)}")
 
-        self.journey = Journey(urls[0], self.viewport)
+        self.journey = Journey(urls[0], self.viewport,
+                               platform_type=getattr(self, 'platform_type', None),
+                               user_agent=getattr(self, 'user_agent', None))
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)

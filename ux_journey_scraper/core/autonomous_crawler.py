@@ -133,6 +133,8 @@ class AutonomousCrawler:
                 self.platform.viewport["width"],
                 self.platform.viewport["height"],
             ),
+            platform_type=self.platform.type,
+            user_agent=self.platform.user_agent,
         )
 
         try:

@@ -217,5 +217,6 @@ class JourneyLoader:
             "start_time": self._journey_data.get("start_time"),
             "end_time": self._journey_data.get("end_time"),
             "viewport": self._journey_data.get("viewport"),
+            "platform": self._journey_data.get("platform"),
             "total_steps": self._journey_data.get("total_steps"),
         }
