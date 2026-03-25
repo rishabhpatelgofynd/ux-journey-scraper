@@ -29,6 +29,7 @@ from ux_journey_scraper.core.human_behaviour import HumanBehaviour
 from ux_journey_scraper.core.journey_recorder import Journey, JourneyStep
 from ux_journey_scraper.core.navigation_behaviour import NavigationBehaviour
 from ux_journey_scraper.core.navigation_queue import NavigationAction, NavigationQueue
+from ux_journey_scraper.core.compliance_data_collector import ComplianceDataCollector
 from ux_journey_scraper.core.page_analyzer import PageAnalyzer
 from ux_journey_scraper.core.page_readiness import PageReadinessEngine
 from ux_journey_scraper.core.screenshot_manager import ScreenshotManager
@@ -101,6 +102,7 @@ class AutonomousCrawler:
             blur_pii=True,
         )
         self.page_analyzer = PageAnalyzer()
+        self.compliance_collector = ComplianceDataCollector()
         self.auth_manager = AuthManager(config.auth)
         self.form_filler = FormFiller(config.form_fill)
 
@@ -154,6 +156,7 @@ class AutonomousCrawler:
                     logger.info(f"Injected {len(cookies)} cookies (returning visitor)")
 
             self.page = await self.context.new_page()
+            self.compliance_collector.attach(self.page)
 
             # Authenticate if needed
             if self.auth_state == "logged_in":
@@ -378,6 +381,13 @@ class AutonomousCrawler:
 
             # Analyze page
             page_data = await self.page_analyzer.analyze_page(self.page)
+
+            # Capture browser-state data for compliance analysis
+            try:
+                compliance_data = await self.compliance_collector.collect(self.page, self.context)
+                page_data.update(compliance_data)
+            except Exception as e:
+                logger.debug(f"Compliance data collection failed: {e}")
 
             # Create step
             step = JourneyStep(
