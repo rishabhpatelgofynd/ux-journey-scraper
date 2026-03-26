@@ -248,9 +248,15 @@ class ElementIntelligence:
             logger.error(f"Error finding clickables: {e}")
             return []
 
+    # Base domain for internal/external link detection (set by crawler)
+    base_domain: str = ""
+
     def calculate_priority(self, element: Dict[str, Any]) -> int:
         """
         Calculate priority score for a clickable element.
+
+        Uses base_domain (set by AutonomousCrawler) to distinguish
+        internal from external links. Only external links are penalized.
 
         Args:
             element: Element dictionary from find_all_clickables
@@ -258,6 +264,15 @@ class ElementIntelligence:
         Returns:
             Priority score (0-100)
         """
+        from urllib.parse import urlparse
+
+        # Filter out non-navigable elements (SVG icons, container divs, etc.)
+        tag = element.get("tag", "")
+        if tag in ("svg", "path", "img", "div", "span", "label"):
+            href = element.get("href", "")
+            if not href or href == "#":
+                return 0
+
         # Combine text fields for keyword matching
         combined_text = " ".join(
             [
@@ -275,7 +290,6 @@ class ElementIntelligence:
                 max_priority = max(max_priority, priority)
 
         # Boost for certain element types
-        tag = element.get("tag", "")
         if tag == "button":
             max_priority += 5
         elif tag == "input":
@@ -287,11 +301,15 @@ class ElementIntelligence:
         if element.get("role") == "button" or "submit" in combined_text:
             max_priority += 5
 
-        # Penalty for external links
+        # Penalty for external links only (not internal absolute URLs)
         href = element.get("href", "")
         if href and href.startswith("http"):
-            # External link penalty
-            max_priority = max(0, max_priority - 20)
+            if self.base_domain:
+                parsed = urlparse(href)
+                if self.base_domain not in parsed.netloc:
+                    max_priority = max(0, max_priority - 30)
+            else:
+                max_priority = max(0, max_priority - 20)
 
         # Penalty for mailto/tel links
         if href.startswith(("mailto:", "tel:")):

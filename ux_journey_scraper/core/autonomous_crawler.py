@@ -15,6 +15,7 @@ Integrates:
 
 import asyncio
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -88,13 +89,18 @@ class AutonomousCrawler:
             self.max_pages = config.crawler.max_pages
             self.target_page_types = []
 
-        # Initialize components
+        # Derive base domain for internal/external link detection
+        self.base_domain = urlparse(config.base_url).netloc.replace("www.", "")
+
+        # Initialize components (with domain awareness)
         self.nav_queue = NavigationQueue(max_depth=config.crawler.max_depth)
+        self.nav_queue.base_domain = self.base_domain
         self.state_registry = StateRegistry()
         self.readiness_engine = PageReadinessEngine(
             timeout_ms=config.crawler.timeout_per_page_ms
         )
         self.element_intelligence = ElementIntelligence()
+        self.element_intelligence.base_domain = self.base_domain
         self.human = HumanBehaviour()
         self.nav_behaviour = NavigationBehaviour()
         self.screenshot_manager = ScreenshotManager(
@@ -207,8 +213,28 @@ class AutonomousCrawler:
             if self.playwright:
                 await self.playwright.stop()
 
+    # Block page signatures for detection
+    BLOCK_SIGNATURES = [
+        "access denied", "access is temporarily restricted",
+        "403 error", "403 forbidden", "request blocked",
+        "captcha", "robot", "unusual activity", "verify you are human",
+        "just a moment",  # Cloudflare challenge
+    ]
+
+    def _is_block_page(self, title: str, content_preview: str) -> bool:
+        """Check if the current page is a block/CAPTCHA page."""
+        combined = (title + " " + content_preview).lower()
+        return any(sig in combined for sig in self.BLOCK_SIGNATURES)
+
     async def _crawl_loop(self) -> None:
-        """Main crawl loop - process navigation queue until empty or limit reached."""
+        """
+        Main crawl loop - process navigation queue until empty or limit reached.
+
+        Uses page.goto() for <a> link navigation instead of clicking, which:
+        - Works with hidden/accordion/footer links
+        - Bypasses Cloudflare challenges on click intercepts
+        - Is more reliable than selector-based clicking
+        """
         while self.pages_captured < self.max_pages:
             # Get next action
             action = self.nav_queue.next()
@@ -216,23 +242,74 @@ class AutonomousCrawler:
                 logger.info("Navigation queue exhausted")
                 break
 
-            logger.info(
-                f"[{self.pages_captured + 1}/{self.max_pages}] "
-                f"Processing action: {action.type} (priority={action.priority}, depth={action.depth})"
-            )
-
             try:
-                # Execute action
-                success = await self._execute_action(action)
+                # Extract metadata for link-based navigation
+                href = action.metadata.get("href", "") if action.metadata else ""
+                tag = action.metadata.get("tag", "") if action.metadata else ""
 
-                if not success:
-                    logger.warning(f"Action failed: {action}")
+                # For <a> tags with href: use page.goto() instead of clicking
+                if action.type == "click" and tag == "a" and href and href.startswith("http"):
+                    # Skip external links
+                    if self.base_domain not in urlparse(href).netloc:
+                        continue
+                    # Skip non-navigable hrefs
+                    if any(href.startswith(p) for p in ["mailto:", "tel:", "javascript:"]):
+                        continue
+
+                    logger.info(
+                        f"[{self.pages_captured + 1}/{self.max_pages}] "
+                        f"Navigating to: {href[:80]}"
+                    )
+                    try:
+                        await self.page.goto(
+                            href, timeout=self.config.crawler.timeout_per_page_ms
+                        )
+                    except Exception as e:
+                        logger.warning(f"Navigation failed: {e}")
+                        continue
+
+                elif action.type == "navigate":
+                    logger.info(
+                        f"[{self.pages_captured + 1}/{self.max_pages}] "
+                        f"Navigate: {action.url[:80]}"
+                    )
+                    success = await self._execute_action(action)
+                    if not success:
+                        continue
+
+                elif action.type == "click":
+                    # Non-link clicks (buttons etc) — use original click logic
+                    logger.info(
+                        f"[{self.pages_captured + 1}/{self.max_pages}] "
+                        f"Click: {action.selector}"
+                    )
+                    success = await self._execute_action(action)
+                    if not success:
+                        continue
+                else:
                     continue
 
                 # Wait for page readiness
                 ready = await self.readiness_engine.wait_until_ready(self.page)
                 if not ready:
                     logger.warning("Page readiness timeout, capturing anyway")
+
+                # Detect block pages before capturing
+                try:
+                    title = await self.page.title() or ""
+                    preview = await self.page.evaluate(
+                        "document.body?.innerText?.slice(0, 500) || ''"
+                    )
+                    if self._is_block_page(title, preview):
+                        logger.warning(f"Block page detected: {title}")
+                        try:
+                            await self.page.go_back()
+                            await asyncio.sleep(1)
+                        except Exception:
+                            pass
+                        continue
+                except Exception:
+                    pass
 
                 # Check for auth wall
                 if await self.auth_manager.detect_auth_wall(self.page):
@@ -278,44 +355,39 @@ class AutonomousCrawler:
                         self.pages_captured += 1
 
                 # Random browsing behaviors (anti-detection)
-                # Backtrack occasionally
                 await self.nav_behaviour.maybe_backtrack(self.page)
-
-                # Revisit homepage occasionally
                 await self.nav_behaviour.maybe_revisit_home(
                     self.page, self.config.base_url
                 )
-
-                # Scroll without clicking sometimes
                 await self.nav_behaviour.maybe_scroll_without_clicking(self.page)
-
-                # Long pause occasionally
                 await self.nav_behaviour.maybe_long_pause()
 
                 # Find new clickables
-                clickables = await self.element_intelligence.find_all_clickables(
-                    self.page,
-                    in_viewport_only=False,
-                    max_elements=100,
-                )
-
-                # Add clickables to navigation queue
-                added = 0
-                for clickable in clickables:
-                    # Create navigation action
-                    new_action = NavigationAction(
-                        type="click",
-                        priority=clickable["priority"],
-                        depth=action.depth + 1,
-                        url=current_url,
-                        selector=self._generate_selector(clickable),
-                        metadata=clickable,
+                try:
+                    clickables = await self.element_intelligence.find_all_clickables(
+                        self.page,
+                        in_viewport_only=False,
+                        max_elements=100,
                     )
 
-                    if self.nav_queue.add(new_action):
-                        added += 1
+                    # Add clickables to navigation queue
+                    added = 0
+                    for clickable in clickables:
+                        new_action = NavigationAction(
+                            type="click",
+                            priority=clickable["priority"],
+                            depth=action.depth + 1,
+                            url=current_url,
+                            selector=self._generate_selector(clickable),
+                            metadata=clickable,
+                        )
 
-                logger.debug(f"Added {added} new actions to queue")
+                        if self.nav_queue.add(new_action):
+                            added += 1
+
+                    logger.debug(f"Added {added} new actions to queue")
+                except Exception as e:
+                    logger.error(f"Error finding clickables: {e}")
 
                 # Human delay before next action
                 await self.human.human_delay(
@@ -408,24 +480,53 @@ class AutonomousCrawler:
 
     def _generate_selector(self, clickable: Dict) -> str:
         """
-        Generate CSS selector for clickable element.
+        Generate a robust CSS selector for a clickable element.
 
-        Args:
-            clickable: Clickable element dict
+        Handles Tailwind CSS classes (h-[38px], bg-[#5430B2], md:w-[275px])
+        which contain brackets, colons, and hashes that crash querySelectorAll.
 
-        Returns:
-            CSS selector string
+        Strategy: href for links, text for buttons, aria-label, safe classes.
         """
-        # Prefer ID
-        if clickable.get("id"):
-            return f"#{clickable['id']}"
+        el_id = clickable.get("id", "")
+        tag = clickable.get("tag", "div")
+        href = clickable.get("href", "")
+        classes = clickable.get("class", "")
 
-        # Use stored selector
-        if clickable.get("selector"):
-            return clickable["selector"]
+        # 1. ID-based (escape if needed)
+        if el_id:
+            if re.match(r'^[a-zA-Z_][a-zA-Z0-9_-]*$', el_id):
+                return f"#{el_id}"
+            else:
+                return f'[id="{el_id}"]'
 
-        # Fallback to tag
-        return clickable.get("tag", "div")
+        # 2. For <a> tags, use href (most reliable for navigation)
+        if tag == "a" and href and href != "#":
+            safe_href = href.replace('"', '\\"')
+            if len(safe_href) > 100:
+                safe_href = safe_href[:100]
+                return f'{tag}[href^="{safe_href}"]'
+            return f'{tag}[href="{safe_href}"]'
+
+        # 3. For buttons, use text content (Playwright-style)
+        text = clickable.get("text", "").strip()
+        if tag == "button" and text:
+            safe_text = text[:50].replace('"', '\\"')
+            return f'button:has-text("{safe_text}")'
+
+        # 4. Use aria-label if available
+        aria = clickable.get("aria_label", "")
+        if aria:
+            safe_aria = aria.replace('"', '\\"')
+            return f'[aria-label="{safe_aria}"]'
+
+        # 5. Use first safe CSS class (no Tailwind brackets/colons/hashes)
+        if classes and isinstance(classes, str):
+            for cls in classes.split():
+                if re.match(r'^[a-zA-Z_][a-zA-Z0-9_-]*$', cls):
+                    return f"{tag}.{cls}"
+
+        # 6. Fallback to tag only
+        return tag
 
     def get_stats(self) -> Dict:
         """

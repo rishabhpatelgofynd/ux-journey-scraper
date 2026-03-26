@@ -220,16 +220,21 @@ class NavigationQueue:
         else:
             return f"{action.type}:{action.url}:{action.selector}"
 
+    # Base domain for internal/external detection (set by crawler)
+    base_domain: str = ""
+
     def _is_external_link(self, href: str) -> bool:
         """
-        Check if href is external link.
+        Check if href is external link using base_domain comparison.
 
         Args:
             href: URL or path
 
         Returns:
-            True if external (starts with http and different domain)
+            True if external (different domain from base_domain)
         """
+        from urllib.parse import urlparse
+
         if not href:
             return False
 
@@ -237,9 +242,12 @@ class NavigationQueue:
         if not href.startswith("http"):
             return False
 
-        # Same domain check would require base_url context
-        # For now, treat all absolute http:// links as potentially external
-        return True
+        # Compare against base domain
+        if self.base_domain:
+            parsed = urlparse(href)
+            return self.base_domain not in parsed.netloc
+
+        return False
 
     def clear_low_priority(self, threshold: int = 20) -> int:
         """

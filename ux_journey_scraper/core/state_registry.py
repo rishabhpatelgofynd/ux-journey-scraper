@@ -47,15 +47,27 @@ class StateRegistry:
         r"/order[_-]?complete",
     ]
 
-    def __init__(self):
-        """Initialize empty state registry."""
+    def __init__(self, use_structural_dedup: bool = False):
+        """
+        Initialize empty state registry.
+
+        Args:
+            use_structural_dedup: Enable Layer 3 structural hash dedup.
+                Disabled by default because it incorrectly deduplicates
+                same-template pages (PLPs, PDPs) on e-commerce sites.
+        """
         self.seen_urls: Set[str] = set()
         self.seen_dom_hashes: Set[str] = set()
         self.seen_structural_hashes: Set[str] = set()
+        self.use_structural_dedup = use_structural_dedup
 
     def is_new_state(self, url: str, dom_content: str) -> bool:
         """
         Check if this URL + DOM combination represents a new state.
+
+        Uses 2-layer dedup by default (URL + DOM hash). Layer 3 structural
+        hash is opt-in because it incorrectly deduplicates same-template
+        pages on e-commerce sites.
 
         Args:
             url: Current page URL
@@ -78,15 +90,16 @@ class StateRegistry:
         if dom_hash in self.seen_dom_hashes:
             return False
 
-        # Layer 3: Structural hash
-        structural_hash = self._hash_structure(dom_content)
-        if structural_hash in self.seen_structural_hashes:
-            return False
+        # Layer 3: Structural hash (opt-in, off by default)
+        if self.use_structural_dedup:
+            structural_hash = self._hash_structure(dom_content)
+            if structural_hash in self.seen_structural_hashes:
+                return False
+            self.seen_structural_hashes.add(structural_hash)
 
         # New state - register it
         self.seen_urls.add(normalized_url)
         self.seen_dom_hashes.add(dom_hash)
-        self.seen_structural_hashes.add(structural_hash)
 
         return True
 
