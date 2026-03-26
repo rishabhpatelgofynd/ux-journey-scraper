@@ -217,6 +217,11 @@ class ProxySettings:
     pool_size: int = 5  # Number of IPs in rotation pool
     geo: Optional[str] = None  # Geo target: "IN", "US", etc.
     domains: List[str] = field(default_factory=list)  # Domain filter
+    tiers: List[Dict[str, Any]] = field(default_factory=lambda: [
+        {"name": "direct", "endpoint_env": None},
+        {"name": "datacenter", "endpoint_env": "PROXY_DATACENTER_URL"},
+        {"name": "residential", "endpoint_env": "PROXY_RESIDENTIAL_URL"},
+    ])  # Proxy tiers for automatic escalation
 
     def __post_init__(self):
         """Validate proxy configuration."""

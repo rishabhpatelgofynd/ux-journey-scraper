@@ -116,6 +116,7 @@ class AutonomousCrawler:
         self.journey: Optional[Journey] = None
         self.current_step = 0
         self.pages_captured = 0
+        self.captured_urls: set = set()
         self.playwright = None
         self.browser = None
         self.context = None
@@ -147,11 +148,21 @@ class AutonomousCrawler:
 
         try:
             # Launch stealth browser (routes to local or cloud)
-            self.playwright, self.browser, self.context = await create_stealth_browser(
-                config=self.config,
-                platform=self.platform,
-                proxy_override=self.proxy_override,
-            )
+            for attempt in range(3):
+                try:
+                    self.playwright, self.browser, self.context = await create_stealth_browser(
+                        config=self.config,
+                        platform=self.platform,
+                        proxy_override=self.proxy_override,
+                    )
+                    break
+                except Exception as e:
+                    if "429" in str(e) and attempt < 2:
+                        wait = (attempt + 1) * 30
+                        logger.warning(f"Rate limited, waiting {wait}s (attempt {attempt + 1}/3)")
+                        await asyncio.sleep(wait)
+                    else:
+                        raise
 
             # Inject cookies if available (returning visitor simulation)
             if self.cookie_jar:
@@ -265,7 +276,14 @@ class AutonomousCrawler:
                             href, timeout=self.config.crawler.timeout_per_page_ms
                         )
                     except Exception as e:
-                        logger.warning(f"Navigation failed: {e}")
+                        error_msg = str(e)
+                        if "ERR_TOO_MANY_REDIRECTS" in error_msg:
+                            logger.warning(f"Redirect loop detected for {href[:80]}, skipping")
+                        elif "ERR_INTERNET_DISCONNECTED" in error_msg:
+                            logger.error(f"Network disconnected, stopping crawl")
+                            break  # Stop the crawl loop entirely
+                        else:
+                            logger.warning(f"Navigation failed: {e}")
                         continue
 
                 elif action.type == "navigate":
@@ -330,9 +348,20 @@ class AutonomousCrawler:
                     logger.debug("Duplicate state detected, skipping capture")
                     continue
 
+                # URL-based dedup (catches same URL with different DOM)
+                normalized_url = self.state_registry.normalize_url(current_url)
+                if normalized_url in self.captured_urls:
+                    logger.debug("URL already captured, skipping")
+                    continue
+
                 # Capture screen
                 await self._capture_screen()
                 self.pages_captured += 1
+                self.captured_urls.add(normalized_url)
+
+                # Enqueue all <a href> links from page (more reliable than clickable detection)
+                link_count = await self._enqueue_page_links(self.page, action.depth)
+                logger.info(f"Enqueued {link_count} page links")
 
                 # Analyze page type for navigation behaviour
                 page_data = await self.page_analyzer.analyze_page(self.page)
@@ -399,6 +428,35 @@ class AutonomousCrawler:
             except Exception as e:
                 logger.error(f"Error processing action: {e}")
                 continue
+
+    async def _enqueue_page_links(self, page, current_depth: int) -> int:
+        """Extract all <a href> links from page and add as navigate actions."""
+        try:
+            links = await page.evaluate("""
+                () => Array.from(document.querySelectorAll('a[href]'))
+                    .map(a => a.href)
+                    .filter(href => href && href.startsWith('http'))
+            """)
+            added = 0
+            for href in links:
+                parsed = urlparse(href)
+                # Skip external, mailto, tel, javascript
+                if self.base_domain not in parsed.netloc:
+                    continue
+                if any(href.startswith(p) for p in ["mailto:", "tel:", "javascript:"]):
+                    continue
+                action = NavigationAction(
+                    type="navigate",
+                    priority=30,  # Default priority for discovered links
+                    depth=current_depth + 1,
+                    url=href,
+                )
+                if self.nav_queue.add(action):
+                    added += 1
+            return added
+        except Exception as e:
+            logger.error(f"Error enqueuing page links: {e}")
+            return 0
 
     async def _execute_action(self, action: NavigationAction) -> bool:
         """

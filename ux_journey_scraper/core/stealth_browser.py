@@ -19,11 +19,25 @@ from ..config.scrape_config import BrowserProvider, PlatformConfig, ScrapeConfig
 logger = logging.getLogger(__name__)
 
 
-# Full anti-detection script injected into every local browser page
-FULL_SPOOF_SCRIPT = """
-// Remove webdriver flag
+def _build_spoof_script(platform_type: str = "web_desktop") -> str:
+    """Build anti-detection JS script with platform-consistent properties."""
+    if platform_type == "web_mobile":
+        nav_platform = "iPhone"
+        hardware_concurrency = 4
+        device_memory = 4
+    elif platform_type == "web_tablet":
+        nav_platform = "iPad"
+        hardware_concurrency = 4
+        device_memory = 4
+    else:
+        nav_platform = "Win32"
+        hardware_concurrency = 8
+        device_memory = 8
+
+    script = r"""
+// Remove webdriver flag — real Chrome 89+ returns false, not undefined
 Object.defineProperty(navigator, 'webdriver', {
-    get: () => undefined
+    get: () => false
 });
 
 // Add chrome object
@@ -34,32 +48,49 @@ window.chrome = {
     app: {}
 };
 
-// Mock plugins
-Object.defineProperty(navigator, 'plugins', {
-    get: () => [
+// Mock plugins with proper PluginArray-like behavior
+(function() {
+    const pluginData = [
         {
-            0: {type: "application/x-google-chrome-pdf", suffixes: "pdf"},
+            name: "Chrome PDF Plugin",
             description: "Portable Document Format",
             filename: "internal-pdf-viewer",
-            length: 1,
-            name: "Chrome PDF Plugin"
+            mimeTypes: [{type: "application/x-google-chrome-pdf", suffixes: "pdf"}]
         },
         {
-            0: {type: "application/pdf", suffixes: "pdf"},
+            name: "Chrome PDF Viewer",
             description: "Portable Document Format",
             filename: "mhjfbmdgcfjbbpaeojofohoefgiehjai",
-            length: 1,
-            name: "Chrome PDF Viewer"
+            mimeTypes: [{type: "application/pdf", suffixes: "pdf"}]
         },
         {
-            0: {type: "application/x-nacl", suffixes: ""},
+            name: "Native Client",
             description: "Native Client Executable",
             filename: "internal-nacl-plugin",
-            length: 2,
-            name: "Native Client"
+            mimeTypes: [{type: "application/x-nacl", suffixes: ""}]
         }
-    ]
-});
+    ];
+    const plugins = pluginData.map(p => {
+        const plugin = Object.create(Plugin.prototype);
+        Object.defineProperties(plugin, {
+            name: {value: p.name, enumerable: true},
+            description: {value: p.description, enumerable: true},
+            filename: {value: p.filename, enumerable: true},
+            length: {value: p.mimeTypes.length, enumerable: true},
+            0: {value: p.mimeTypes[0], enumerable: true},
+            item: {value: function(i) { return p.mimeTypes[i] || null; }},
+            namedItem: {value: function(name) { return p.mimeTypes.find(m => m.type === name) || null; }},
+        });
+        return plugin;
+    });
+    const pluginArray = Object.create(PluginArray.prototype);
+    plugins.forEach((p, i) => Object.defineProperty(pluginArray, i, {value: p, enumerable: true}));
+    Object.defineProperty(pluginArray, 'length', {value: plugins.length, enumerable: true});
+    pluginArray.item = function(i) { return plugins[i] || null; };
+    pluginArray.namedItem = function(name) { return plugins.find(p => p.name === name) || null; };
+    pluginArray.refresh = function() {};
+    Object.defineProperty(navigator, 'plugins', { get: () => pluginArray });
+})();
 
 // Mock languages
 Object.defineProperty(navigator, 'languages', {
@@ -84,23 +115,37 @@ if (navigator.getBattery) {
     });
 }
 
-// Randomize canvas fingerprint slightly
-const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
-HTMLCanvasElement.prototype.toDataURL = function(type) {
-    const canvas = this;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-        const originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        // Add minimal noise
-        for (let i = 0; i < originalData.data.length; i += 4) {
-            if (Math.random() < 0.001) {
-                originalData.data[i] = (originalData.data[i] + Math.floor(Math.random() * 5)) % 256;
-            }
-        }
-        ctx.putImageData(originalData, 0, 0);
+// Canvas fingerprint: use session-seeded deterministic noise
+// (DataDome renders same canvas twice and compares — random noise gets detected)
+(function() {
+    const seed = Math.floor(Math.random() * 2147483647);
+    function mulberry32(s) {
+        return function() {
+            s |= 0; s = s + 0x6D2B79F5 | 0;
+            let t = Math.imul(s ^ s >>> 15, 1 | s);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
     }
-    return originalToDataURL.apply(this, arguments);
-};
+    const sessionRng = mulberry32(seed);
+
+    const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function(type) {
+        const canvas = this;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            const rng = mulberry32(seed);  // Same seed = same noise every call
+            const originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < originalData.data.length; i += 4) {
+                if (rng() < 0.001) {
+                    originalData.data[i] = (originalData.data[i] + (rng() * 5 | 0)) % 256;
+                }
+            }
+            ctx.putImageData(originalData, 0, 0);
+        }
+        return originalToDataURL.apply(this, arguments);
+    };
+})();
 
 // Mock connection
 Object.defineProperty(navigator, 'connection', {
@@ -112,6 +157,13 @@ Object.defineProperty(navigator, 'connection', {
     })
 });
 
+// Fix platform/UA consistency
+Object.defineProperty(navigator, 'platform', { get: () => '__NAV_PLATFORM__' });
+
+// Hardware properties must be realistic for the platform
+Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => __HARDWARE_CONCURRENCY__ });
+Object.defineProperty(navigator, 'deviceMemory', { get: () => __DEVICE_MEMORY__ });
+
 // Override toString
 const originalToString = Function.prototype.toString;
 Function.prototype.toString = function() {
@@ -121,6 +173,10 @@ Function.prototype.toString = function() {
     return originalToString.apply(this, arguments);
 };
 """
+    script = script.replace("__NAV_PLATFORM__", nav_platform)
+    script = script.replace("__HARDWARE_CONCURRENCY__", str(hardware_concurrency))
+    script = script.replace("__DEVICE_MEMORY__", str(device_memory))
+    return script
 
 
 # Launch args — every local browser uses exactly these
@@ -180,7 +236,7 @@ async def _create_local_patchright(
 ) -> Tuple[Playwright, Browser, BrowserContext]:
     """
     Local Patchright browser.
-    Handles: TLS fingerprint (via Patchright), JS spoofing (via FULL_SPOOF_SCRIPT),
+    Handles: TLS fingerprint (via Patchright), JS spoofing (via _build_spoof_script),
     proxy (from config or override), viewport + UA (from platform).
     """
     # Try patchright first, fall back to playwright
@@ -223,16 +279,11 @@ async def _create_local_patchright(
         device_scale_factor=(
             2.0 if platform.type in ("web_mobile", "web_tablet") else 1.0
         ),
-        extra_http_headers={
-            "Accept-Language": "en-US,en;q=0.9,hi-IN;q=0.8,hi;q=0.7",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Upgrade-Insecure-Requests": "1",
-        },
+        extra_http_headers=_build_http_headers(platform.type),
     )
 
-    # Inject full JS spoof to every page
-    await context.add_init_script(FULL_SPOOF_SCRIPT)
+    # Inject platform-aware JS spoof to every page
+    await context.add_init_script(_build_spoof_script(platform.type))
 
     logger.info(
         f"Local browser created: {platform.type} "
@@ -359,6 +410,34 @@ async def _create_browserbase(
 # ──────────────────────────────────────────────────
 # SHARED UTILS
 # ──────────────────────────────────────────────────
+
+
+def _build_http_headers(platform_type: str) -> Dict[str, str]:
+    """Build HTTP headers with sec-ch-ua Client Hints matching the UA string."""
+    headers = {
+        "Accept-Language": "en-US,en;q=0.9,hi-IN;q=0.8,hi;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Upgrade-Insecure-Requests": "1",
+    }
+
+    if platform_type == "web_desktop":
+        # Desktop Chrome 124 on Windows — must match _default_ua
+        headers["sec-ch-ua"] = (
+            '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"'
+        )
+        headers["sec-ch-ua-mobile"] = "?0"
+        headers["sec-ch-ua-platform"] = '"Windows"'
+    elif platform_type == "web_mobile":
+        # Mobile Safari on iOS — Safari doesn't send sec-ch-ua by default,
+        # but if the server requests it via Accept-CH, omitting is correct.
+        # We omit Client Hints for mobile Safari to match real behavior.
+        pass
+    elif platform_type == "web_tablet":
+        # iPad Safari — same as mobile, no Client Hints
+        pass
+
+    return headers
 
 
 def _default_ua(platform_type: str) -> str:

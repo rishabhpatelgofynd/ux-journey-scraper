@@ -200,7 +200,12 @@ def info(journey_file):
 @click.option(
     "--appium-server", default="http://localhost:4723", help="Appium server URL"
 )
-def scrape(brand, platforms, output_dir, max_pages, appium_server):
+@click.option(
+    "--local/--no-local",
+    default=False,
+    help="Force local Patchright browser (ignore Browserbase env vars)",
+)
+def scrape(brand, platforms, output_dir, max_pages, appium_server, local):
     """Auto-provision and scrape a brand across all platforms.
 
     Example: ux-journey scrape --brand Amazon --platforms web_desktop,web_mobile,native_android
@@ -239,7 +244,8 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
         "shein": "https://www.shein.com",
         "temu": "https://www.temu.com",
     }
-    base_url = BRAND_URLS.get(brand.lower(), f"https://www.{brand.lower()}.com")
+    sanitized = brand.strip().replace(" ", "").lower()
+    base_url = BRAND_URLS.get(sanitized, f"https://www.{sanitized}.com")
 
     VIEWPORTS = {
         "web_desktop": {"width": 1920, "height": 1080},
@@ -285,20 +291,27 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server):
         return
 
     # Use Browserbase for web platforms if credentials are available,
-    # otherwise fall back to local Patchright stealth browser
+    # otherwise fall back to local Patchright stealth browser.
+    # --local flag forces local browser regardless of env vars.
     import os as _os
 
-    has_browserbase = bool(
-        _os.environ.get("BROWSERBASE_API_KEY")
-        and _os.environ.get("BROWSERBASE_PROJECT_ID")
-    )
-    browser_provider = BrowserProvider(
-        type="browserbase" if has_browserbase else "local",
-        use_proxy=False,  # proxy requires paid plan; cloud browser itself is free
-        use_stealth=True,
-    )
-    if has_browserbase:
-        click.echo("  Using Browserbase cloud browser (residential IP)")
+    if local:
+        browser_provider = BrowserProvider(
+            type="local", use_proxy=False, use_stealth=True
+        )
+        click.echo("  Using local Patchright stealth browser (--local)")
+    else:
+        has_browserbase = bool(
+            _os.environ.get("BROWSERBASE_API_KEY")
+            and _os.environ.get("BROWSERBASE_PROJECT_ID")
+        )
+        browser_provider = BrowserProvider(
+            type="browserbase" if has_browserbase else "local",
+            use_proxy=False,
+            use_stealth=True,
+        )
+        if has_browserbase:
+            click.echo("  Using Browserbase cloud browser (residential IP)")
     else:
         click.echo("  Using local Patchright stealth browser")
 
