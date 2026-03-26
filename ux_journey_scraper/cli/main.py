@@ -312,8 +312,8 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server, local):
         )
         if has_browserbase:
             click.echo("  Using Browserbase cloud browser (residential IP)")
-    else:
-        click.echo("  Using local Patchright stealth browser")
+        else:
+            click.echo("  Using local Patchright stealth browser")
 
     # Build a full ScrapeConfig using ALL ux-journey-scraper features
     scrape_config = ScrapeConfig(
