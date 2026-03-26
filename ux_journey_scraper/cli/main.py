@@ -18,9 +18,20 @@ try:
 except ImportError:
     _APPIUM_AVAILABLE = False
 
+try:
+    from ux_journey_scraper.core.crawlee_adapter import CrawleeAdapter, is_crawlee_available
 
-def _run_platform(scrape_config, platform, platform_dir):
-    """Shared crawl execution used by both 'crawl' and 'scrape' commands."""
+    _CRAWLEE_AVAILABLE = is_crawlee_available()
+except ImportError:
+    _CRAWLEE_AVAILABLE = False
+
+
+def _run_platform(scrape_config, platform, platform_dir, engine="auto"):
+    """Shared crawl execution used by both 'crawl' and 'scrape' commands.
+
+    Args:
+        engine: "auto" (crawlee if available, else local), "crawlee", or "local"
+    """
     from pathlib import Path as _Path
 
     platform_dir = _Path(platform_dir)
@@ -36,11 +47,21 @@ def _run_platform(scrape_config, platform, platform_dir):
             output_dir=str(platform_dir),
             platform=platform,
         )
+    elif engine == "crawlee" or (engine == "auto" and _CRAWLEE_AVAILABLE):
+        viewport = platform.viewport or {}
+        w = viewport.get("width", "?")
+        h = viewport.get("height", "?")
+        click.echo(f"Platform: {platform.type} ({w}x{h}) [crawlee engine]")
+        crawler = CrawleeAdapter(
+            config=scrape_config,
+            output_dir=str(platform_dir),
+            platform=platform,
+        )
     else:
         viewport = platform.viewport or {}
         w = viewport.get("width", "?")
         h = viewport.get("height", "?")
-        click.echo(f"Platform: {platform.type} ({w}x{h})")
+        click.echo(f"Platform: {platform.type} ({w}x{h}) [local engine]")
         crawler = AutonomousCrawler(
             config=scrape_config,
             output_dir=str(platform_dir),
@@ -67,7 +88,13 @@ def cli():
 @click.option(
     "--output-dir", default="journey_output", help="Output directory for results"
 )
-def crawl(config, output_dir):
+@click.option(
+    "--engine",
+    type=click.Choice(["auto", "crawlee", "local"]),
+    default="auto",
+    help="Crawl engine: auto (crawlee if available), crawlee, or local",
+)
+def crawl(config, output_dir, engine):
     """Autonomous crawl using YAML configuration (v0.5.0)."""
     click.echo(f"\n{'='*60}")
     click.echo(f"  UX JOURNEY AUTONOMOUS CRAWLER v0.5.0")
@@ -89,7 +116,7 @@ def crawl(config, output_dir):
         total_pages = 0
         for platform in scrape_config.platforms:
             platform_dir = Path(output_dir) / platform.type
-            total_pages += _run_platform(scrape_config, platform, platform_dir)
+            total_pages += _run_platform(scrape_config, platform, platform_dir, engine=engine)
 
         click.echo(f"\n{'='*60}")
         click.echo(f"All platforms complete!")
@@ -205,7 +232,13 @@ def info(journey_file):
     default=False,
     help="Force local Patchright browser (ignore Browserbase env vars)",
 )
-def scrape(brand, platforms, output_dir, max_pages, appium_server, local):
+@click.option(
+    "--engine",
+    type=click.Choice(["auto", "crawlee", "local"]),
+    default="auto",
+    help="Crawl engine: auto (crawlee if available), crawlee, or local",
+)
+def scrape(brand, platforms, output_dir, max_pages, appium_server, local, engine):
     """Auto-provision and scrape a brand across all platforms.
 
     Example: ux-journey scrape --brand Amazon --platforms web_desktop,web_mobile,native_android
@@ -213,8 +246,13 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server, local):
     click.echo(f"\n{'='*60}")
     click.echo(f"  UX JOURNEY BRAND SCRAPER v0.5.0")
     click.echo(f"{'='*60}\n")
+    # --local forces local engine
+    if local and engine == "auto":
+        engine = "local"
+
     click.echo(f"Brand:     {brand}")
     click.echo(f"Platforms: {platforms}")
+    click.echo(f"Engine:    {engine}")
     click.echo(f"Output:    {output_dir}\n")
 
     from ux_journey_scraper.config.scrape_config import (
@@ -336,7 +374,7 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server, local):
         platform_dir = Path(output_dir) / platform.type
         click.echo(f"{'─'*50}")
         try:
-            total_pages += _run_platform(scrape_config, platform, platform_dir)
+            total_pages += _run_platform(scrape_config, platform, platform_dir, engine=engine)
         except Exception as e:
             click.echo(f"  Error: {e}")
             import traceback
