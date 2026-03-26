@@ -208,7 +208,7 @@ class ElementIntelligence:
                             href: href,
                             role: role,
                             aria_label: ariaLabel,
-                            class: el.className,
+                            class: typeof el.className === 'string' ? el.className : '',
                             id: el.id,
                             selector: selector,
                             rect: {
