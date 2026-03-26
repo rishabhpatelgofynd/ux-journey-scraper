@@ -37,6 +37,8 @@ from ux_journey_scraper.core.screenshot_manager import ScreenshotManager
 from ux_journey_scraper.core.session_planner import VisitPlan
 from ux_journey_scraper.core.state_registry import StateRegistry
 from ux_journey_scraper.core.stealth_browser import create_stealth_browser
+from ux_journey_scraper.core.cdp_element_detector import CDPElementDetector
+from ux_journey_scraper.core.persistent_queue import PersistentQueue
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +113,13 @@ class AutonomousCrawler:
         self.compliance_collector = ComplianceDataCollector()
         self.auth_manager = AuthManager(config.auth)
         self.form_filler = FormFiller(config.form_fill)
+        self.cdp_detector = CDPElementDetector()
+
+        # Use persistent queue if output_dir is available (crash recovery)
+        queue_path = self.output_dir / "queue_state.json"
+        self.persistent_queue = PersistentQueue(
+            str(queue_path), max_depth=config.crawler.max_depth
+        )
 
         # Crawl state
         self.journey: Optional[Journey] = None
@@ -359,6 +368,13 @@ class AutonomousCrawler:
                 self.pages_captured += 1
                 self.captured_urls.add(normalized_url)
 
+                # Save queue state for crash recovery
+                try:
+                    self.persistent_queue._queue = self.nav_queue
+                    self.persistent_queue.mark_completed(action)
+                except Exception:
+                    pass
+
                 # Enqueue all <a href> links from page (more reliable than clickable detection)
                 link_count = await self._enqueue_page_links(self.page, action.depth)
                 logger.info(f"Enqueued {link_count} page links")
@@ -391,13 +407,32 @@ class AutonomousCrawler:
                 await self.nav_behaviour.maybe_scroll_without_clicking(self.page)
                 await self.nav_behaviour.maybe_long_pause()
 
-                # Find new clickables
+                # Find new clickables (standard + CDP framework detection)
                 try:
                     clickables = await self.element_intelligence.find_all_clickables(
                         self.page,
                         in_viewport_only=False,
                         max_elements=100,
                     )
+
+                    # Also detect framework-level event listeners (React/Vue/Angular)
+                    try:
+                        cdp_elements = await self.cdp_detector.find_elements_with_listeners(
+                            self.page
+                        )
+                        if cdp_elements:
+                            logger.debug(
+                                f"CDP detected {len(cdp_elements)} framework elements"
+                            )
+                            for el in cdp_elements:
+                                clickables.append({
+                                    **el,
+                                    "priority": 25,  # Base priority for CDP-detected
+                                    "href": "",
+                                    "class": "",
+                                })
+                    except Exception as e:
+                        logger.debug(f"CDP detection skipped: {e}")
 
                     # Add clickables to navigation queue
                     added = 0
