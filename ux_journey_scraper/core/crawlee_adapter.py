@@ -72,12 +72,14 @@ class CrawleeAdapter:
         config: ScrapeConfig,
         output_dir: str = "journey_output",
         platform: Optional[PlatformConfig] = None,
+        browser_type: str = "webkit",
     ):
         if not _CRAWLEE_AVAILABLE:
             raise ImportError(
                 "crawlee is not installed. Install with: pip install 'crawlee[playwright]'"
             )
 
+        self.browser_type = browser_type
         self.config = config
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True, parents=True)
@@ -151,7 +153,7 @@ class CrawleeAdapter:
         crawler = PlaywrightCrawler(
             max_requests_per_crawl=self.config.crawler.max_pages,
             headless=self.config.crawler.headless,
-            browser_type="chromium",
+            browser_type=self.browser_type,
             max_request_retries=self.config.crawler.max_retries,
         )
 
