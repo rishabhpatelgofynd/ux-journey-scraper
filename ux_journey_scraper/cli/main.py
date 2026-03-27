@@ -26,7 +26,7 @@ except ImportError:
     _CRAWLEE_AVAILABLE = False
 
 
-def _run_platform(scrape_config, platform, platform_dir, engine="auto"):
+def _run_platform(scrape_config, platform, platform_dir, engine="auto", browser_type="webkit"):
     """Shared crawl execution used by both 'crawl' and 'scrape' commands.
 
     Args:
@@ -56,6 +56,7 @@ def _run_platform(scrape_config, platform, platform_dir, engine="auto"):
             config=scrape_config,
             output_dir=str(platform_dir),
             platform=platform,
+            browser_type=browser_type,
         )
     else:
         viewport = platform.viewport or {}
@@ -94,7 +95,13 @@ def cli():
     default="auto",
     help="Crawl engine: auto (crawlee if available), crawlee, or local",
 )
-def crawl(config, output_dir, engine):
+@click.option(
+    "--browser-type",
+    type=click.Choice(["webkit", "chromium", "firefox"]),
+    default="webkit",
+    help="Browser engine: webkit (Safari, stealthiest), chromium, firefox",
+)
+def crawl(config, output_dir, engine, browser_type):
     """Autonomous crawl using YAML configuration (v0.5.0)."""
     click.echo(f"\n{'='*60}")
     click.echo(f"  UX JOURNEY AUTONOMOUS CRAWLER v0.5.0")
@@ -116,7 +123,7 @@ def crawl(config, output_dir, engine):
         total_pages = 0
         for platform in scrape_config.platforms:
             platform_dir = Path(output_dir) / platform.type
-            total_pages += _run_platform(scrape_config, platform, platform_dir, engine=engine)
+            total_pages += _run_platform(scrape_config, platform, platform_dir, engine=engine, browser_type=browser_type)
 
         click.echo(f"\n{'='*60}")
         click.echo(f"All platforms complete!")
@@ -238,7 +245,13 @@ def info(journey_file):
     default="auto",
     help="Crawl engine: auto (crawlee if available), crawlee, or local",
 )
-def scrape(brand, platforms, output_dir, max_pages, appium_server, local, engine):
+@click.option(
+    "--browser-type",
+    type=click.Choice(["webkit", "chromium", "firefox"]),
+    default="webkit",
+    help="Browser engine: webkit (Safari, stealthiest), chromium, firefox",
+)
+def scrape(brand, platforms, output_dir, max_pages, appium_server, local, engine, browser_type):
     """Auto-provision and scrape a brand across all platforms.
 
     Example: ux-journey scrape --brand Amazon --platforms web_desktop,web_mobile,native_android
@@ -374,7 +387,7 @@ def scrape(brand, platforms, output_dir, max_pages, appium_server, local, engine
         platform_dir = Path(output_dir) / platform.type
         click.echo(f"{'─'*50}")
         try:
-            total_pages += _run_platform(scrape_config, platform, platform_dir, engine=engine)
+            total_pages += _run_platform(scrape_config, platform, platform_dir, engine=engine, browser_type=browser_type)
         except Exception as e:
             click.echo(f"  Error: {e}")
             import traceback
