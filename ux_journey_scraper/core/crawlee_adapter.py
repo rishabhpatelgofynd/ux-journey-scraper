@@ -23,6 +23,11 @@ from ux_journey_scraper.core.page_analyzer import PageAnalyzer
 from ux_journey_scraper.core.screenshot_manager import ScreenshotManager
 from ux_journey_scraper.core.sitemap_parser import SitemapParser
 
+from ux_journey_scraper.core.design_data_collector import DesignDataCollector
+from ux_journey_scraper.core.page_classifier import PageClassifier
+from ux_journey_scraper.core.anti_crawler_detector import AntiCrawlerDetector
+from ux_journey_scraper.core.page_selector import PageSelector
+
 try:
     from ux_journey_scraper.core.cdp_element_detector import CDPElementDetector
 
@@ -96,6 +101,7 @@ class CrawleeAdapter:
         self.compliance_collector = ComplianceDataCollector()
         self.form_filler = FormFiller(config.form_fill)
         self.cdp_detector = CDPElementDetector() if _CDP_AVAILABLE else None
+        self.design_collector = DesignDataCollector()
 
         # Journey state
         self.journey = Journey(
@@ -147,7 +153,13 @@ class CrawleeAdapter:
         else:
             logger.info("No sitemap found, relying on link discovery from pages")
 
-        # Phase 2: Crawl with crawlee
+        # Phase 2: Smart page selection
+        if sitemap_urls:
+            selected = PageSelector.select(seed_urls, self.base_domain)
+            seed_urls = [s["url"] for s in selected]
+            logger.info(f"Smart selection: {len(seed_urls)} pages to capture")
+
+        # Phase 3: Crawl with crawlee
         viewport = self.platform.viewport or {"width": 1920, "height": 1080}
 
         crawler = PlaywrightCrawler(
@@ -183,8 +195,13 @@ class CrawleeAdapter:
                 text_preview = ""
 
             # Block page detection
-            if self._is_block_page(title, text_preview):
+            if AntiCrawlerDetector.is_block_page(title, text_preview):
                 logger.warning(f"Block page detected: {title} at {url[:60]}")
+                return
+
+            # Empty page detection
+            if AntiCrawlerDetector.is_empty_page(await page.content(), text_preview):
+                logger.warning(f"Empty page detected: {url[:60]}")
                 return
 
             self.pages_captured += 1
@@ -215,6 +232,9 @@ class CrawleeAdapter:
                 logger.warning(f"Page analysis failed: {e}")
                 page_data = {"url": url, "title": title}
 
+            # Classify page type
+            page_data["page_type"] = PageClassifier.classify_url(url)
+
             # 3. Compliance data (cookies, localStorage, network, tab order)
             try:
                 compliance_data = await self.compliance_collector.collect(
@@ -223,6 +243,20 @@ class CrawleeAdapter:
                 page_data.update(compliance_data)
             except Exception as e:
                 logger.debug(f"Compliance data collection failed: {e}")
+
+            # 3.5 Design system data (for DS builder)
+            try:
+                design_data = await self.design_collector.collect(page)
+                page_data["css_variables"] = design_data.get("css_variables", {})
+                page_data["component_tree"] = design_data.get("component_tree", [])
+                page_data["asset_urls"] = design_data.get("asset_urls", {})
+                if isinstance(page_data.get("computed_styles"), list):
+                    page_data["computed_styles"] = {"text_elements": page_data["computed_styles"]}
+                elif not isinstance(page_data.get("computed_styles"), dict):
+                    page_data["computed_styles"] = {}
+                page_data["computed_styles"]["all_elements"] = design_data.get("all_element_styles", [])
+            except Exception as e:
+                logger.debug(f"Design data collection failed: {e}")
 
             # 4. Framework detection
             if self.cdp_detector:
