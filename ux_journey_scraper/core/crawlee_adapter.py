@@ -21,6 +21,7 @@ from ux_journey_scraper.core.form_filler import FormFiller
 from ux_journey_scraper.core.journey_recorder import Journey, JourneyStep
 from ux_journey_scraper.core.page_analyzer import PageAnalyzer
 from ux_journey_scraper.core.screenshot_manager import ScreenshotManager
+from ux_journey_scraper.core.sitemap_parser import SitemapParser
 
 try:
     from ux_journey_scraper.core.cdp_element_detector import CDPElementDetector
@@ -113,7 +114,12 @@ class CrawleeAdapter:
         return any(sig in combined for sig in BLOCK_SIGNATURES)
 
     async def crawl(self) -> Journey:
-        """Run the crawl using crawlee's PlaywrightCrawler.
+        """Run a full-site crawl using crawlee's PlaywrightCrawler.
+
+        Discovery strategy:
+        1. Parse sitemap.xml for all known URLs (instant bulk discovery)
+        2. Crawl each page and extract links (catches pages not in sitemap)
+        3. Combined = maximum page coverage
 
         Returns:
             Journey object with all captured steps.
@@ -123,7 +129,23 @@ class CrawleeAdapter:
         logger.info(f"Platform: {self.platform.type}")
         logger.info(f"Max pages: {self.config.crawler.max_pages}")
 
-        # Build viewport config
+        # Phase 1: Sitemap discovery — find all known URLs upfront
+        sitemap = SitemapParser(
+            self.config.base_url,
+            max_urls=self.config.crawler.max_pages * 2,  # Discover more than we'll crawl
+        )
+        sitemap_urls = await sitemap.discover_all()
+
+        # Build seed URLs: start URL + sitemap URLs
+        seed_urls = [self.config.base_url]
+        if sitemap_urls:
+            logger.info(f"Sitemap: {len(sitemap_urls)} URLs discovered, seeding crawl queue")
+            # Add sitemap URLs (crawlee deduplicates automatically)
+            seed_urls.extend(sitemap_urls)
+        else:
+            logger.info("No sitemap found, relying on link discovery from pages")
+
+        # Phase 2: Crawl with crawlee
         viewport = self.platform.viewport or {"width": 1920, "height": 1080}
 
         crawler = PlaywrightCrawler(
@@ -232,8 +254,8 @@ class CrawleeAdapter:
             except Exception as e:
                 logger.debug(f"Link enqueue failed: {e}")
 
-        # Run the crawl
-        await crawler.run([self.config.base_url])
+        # Run the crawl with all seed URLs (sitemap + base URL)
+        await crawler.run(seed_urls)
 
         # Complete journey
         self.journey.complete()
