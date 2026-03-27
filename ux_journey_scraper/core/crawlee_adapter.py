@@ -162,11 +162,14 @@ class CrawleeAdapter:
         # Phase 3: Crawl with crawlee
         viewport = self.platform.viewport or {"width": 1920, "height": 1080}
 
+        # use_incognito_pages=True required for WebKit (avoids persistent
+        # context which calls CDP setDownloadBehavior — unsupported in WebKit)
         crawler = PlaywrightCrawler(
             max_requests_per_crawl=self.config.crawler.max_pages,
             headless=self.config.crawler.headless,
             browser_type=self.browser_type,
             max_request_retries=self.config.crawler.max_retries,
+            use_incognito_pages=True,
         )
 
         @crawler.router.default_handler
